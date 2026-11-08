@@ -7,8 +7,9 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from llm_gateway import autenticacao
 from llm_gateway import chat as modulo_chat
-from tests.conftest import TOKEN, OllamaFalso, resposta_do_ollama
+from tests.conftest import TOKEN, OllamaFalso, autorizacao, resposta_do_ollama
 from tests.test_chat import PROMPT, chat, erro, linhas_de_metricas, pedido
 
 SEGREDO_DO_SCHEMA = "segredo-que-so-o-schema-tem"
@@ -102,3 +103,26 @@ def test_erro_nao_previsto_e_o_unico_que_preenche_o_campo_erro(
     chat(cliente, pedido(model="qwen3:4b"))
 
     assert [linha["erro"] for linha in linhas_de_metricas(caplog)] == [None, None]
+
+
+def test_excecao_fora_do_chat_tambem_sai_no_formato_da_openai(
+    app: FastAPI, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def explodir(*_: object) -> None:
+        raise RuntimeError(DETALHE)
+
+    monkeypatch.setattr(autenticacao, "ler_token", explodir)
+    caplog.set_level(logging.DEBUG)
+
+    with TestClient(app, raise_server_exceptions=False) as cliente:
+        resposta = cliente.get("/v1/models", headers=autorizacao())
+
+    assert resposta.status_code == 500
+    assert erro(resposta) == {
+        "message": "Erro interno do gateway.",
+        "type": "server_error",
+        "param": None,
+        "code": "erro_interno",
+    }
+    for segredo in SEGREDOS:
+        assert segredo not in resposta.text

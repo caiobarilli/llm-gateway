@@ -44,8 +44,9 @@ projeto não roda.
 
 ## 4. Estilo: PEP 8 pelo ruff
 
-- O ruff é lint e formatador. Regras ativas: `E, F, W, I, B, UP, S, N, SIM, RUF`
-  (`S` é o conjunto do bandit, de segurança). `S101` só é liberado em `tests/`.
+- O ruff é lint e formatador. Regras ativas: `E, F, W, I, B, UP, S, N, SIM, RUF, PT`
+  (`S` é o conjunto do bandit, de segurança; `PT` é o do pytest, que pega
+  `pytest.raises` largo demais). `S101` só é liberado em `tests/`.
 - Linha de 120: desvio consciente do PEP 8 (79), registrado em ADR. Não
   reformate o projeto para 79 nem 88.
 - `ruff format --check` e `ruff check` passam antes de qualquer commit.

@@ -55,11 +55,15 @@ Regras:
   até o teste liberar; nunca `sleep`.
 - A vaga precisa voltar depois de erro do upstream: teste o caso.
 
-## 5. Contrato com a OpenAI (alvo)
+## 5. Contrato com a OpenAI
 
-- Um teste usa o SDK oficial `openai` (dependência só de dev, versão exata)
-  apontado para o app, e confere `chat.completions.create` e `models.list`.
-  É a prova de que "compatível com a OpenAI" é verdade, não promessa.
+- `tests/test_contrato_openai.py` usa o SDK oficial `openai` (dependência só
+  de dev, versão exata) apontado para o app, com `max_retries=0`, e confere
+  `models.list`, `chat.completions.create` com `json_schema` estrito e
+  `parse()` com modelo plano. É a prova de que "compatível com a OpenAI" é
+  verdade, não promessa.
+- O `TestClient` serve de `http_client` do SDK (os dois usam `httpx2`), então o
+  teste roda em processo, sem subir uvicorn nem abrir porta.
 
 ## 6. MCP (alvo, exige ADR)
 
@@ -67,10 +71,14 @@ Regras:
   (`Client(mcp)`): sem token recusa, modelo fora da allowlist recusa,
   ocupado responde ocupado, e a linha de métricas sai sem texto.
 
-## 7. Cobertura (alvo)
+## 7. Cobertura
 
-- `pytest --cov=llm_gateway --cov-report=term-missing` no estágio `teste`.
-- O piso fica no `pyproject.toml` (`fail_under`). Ele só sobe.
+- `pytest --cov=llm_gateway --cov-report=term-missing` no estágio `teste`, com
+  ramos (`[tool.coverage.run] branch = true`).
+- O piso fica no `pyproject.toml` (`fail_under`, hoje 98: o medido, arredondado
+  para baixo). Ele só sobe.
+- As únicas linhas sem cobertura são os três `raise erro` defensivos de
+  `erros.py`. Chamar o tratador com o tipo errado seria um teste tautológico.
 - Linha descoberta se resolve com teste do comportamento, não com
   `pragma: no cover`. `no cover` só em código que não existe em runtime.
 
@@ -86,4 +94,4 @@ Regras:
 - [ ] Nenhum teste acessa rede, disco fora de `tmp_path` ou relógio real.
 - [ ] Toda recusa confere status, `code` e que o upstream não foi chamado.
 - [ ] Campo novo de log tem prova de que não carrega texto nem segredo.
-- [ ] Cobertura não caiu.
+- [ ] Cobertura não caiu (piso no `pyproject.toml`).

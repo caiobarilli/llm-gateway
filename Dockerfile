@@ -39,7 +39,7 @@ RUN uv run --frozen --no-sync ruff check . \
     && uv run --frozen --no-sync ruff format --check . \
     && uv run --frozen --no-sync python tools/sem_comentario.py \
     && uv run --frozen --no-sync mypy src tests tools \
-    && uv run --frozen --no-sync pytest -q -p no:cacheprovider
+    && uv run --frozen --no-sync pytest -q -p no:cacheprovider --cov=llm_gateway --cov-report=term-missing
 
 FROM base
 

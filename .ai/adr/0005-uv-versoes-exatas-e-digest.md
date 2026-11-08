@@ -22,7 +22,7 @@ O mesmo build precisa dar a mesma imagem. O Dependabot do PHParrot subiu o Pytho
 
 ## Evidência
 
-- `pyproject.toml:2-3` (backend), `:8` (Python), `:9-23` (versões exatas) e `:31` (o `N818`).
+- `pyproject.toml:2-3` (backend), `:8` (Python), `:9-26` (versões exatas) e `:33` (o `N818`).
 - `Dockerfile:1` e `:3` (digests), `:19` e `:25` (`uv sync --frozen`), `:45` (remoção do `pip`).
 - `uv.lock`: 175 hashes `sha256` (`grep -c sha256 uv.lock`).
 - PHParrot: `f7bc8f7`, `d44c917` e `864751c`.

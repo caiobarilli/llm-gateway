@@ -6,7 +6,7 @@ O projeto usa só o `uv` (`.claude/skills/python-313/SKILL.md`). O Python é o 3
 
 ```bash
 uv sync --frozen
-uv run pytest
+uv run pytest --cov=llm_gateway --cov-report=term-missing
 uv run ruff check .
 uv run ruff format --check .
 uv run python tools/sem_comentario.py
@@ -36,7 +36,7 @@ Ele roda, nesta ordem, e para no primeiro que falhar:
 2. `ruff format --check .`
 3. `python tools/sem_comentario.py`
 4. `mypy src tests tools` (modo `strict`)
-5. `pytest`
+5. `pytest`, com cobertura de linhas e ramos (`--cov=llm_gateway`). O piso é o `fail_under` do `pyproject.toml` (hoje 98, o medido arredondado para baixo). Ele só sobe: cobertura abaixo do piso reprova o gate.
 
 O `ci.yml` roda a trava de comentários e depois o mesmo build, em push e em pull request para o `main`. Nenhum teste acessa a rede nem o Ollama de verdade: o upstream é um `httpx2.MockTransport` (`tests/conftest.py`).
 

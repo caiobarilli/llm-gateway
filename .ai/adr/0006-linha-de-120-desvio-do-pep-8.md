@@ -8,7 +8,7 @@ Medido em `src/` e `tests/` em `c923f58`: 131 linhas passam de 79, 92 passam de 
 
 ## Decisão
 
-`line-length = 120` no ruff, para o lint e para o formatador. O resto do PEP 8 vem do ruff, com as regras `E, F, W, I, B, UP, S, N, SIM, RUF`.
+`line-length = 120` no ruff, para o lint e para o formatador. O resto do PEP 8 vem do ruff, com as regras `E, F, W, I, B, UP, S, N, SIM, RUF, PT`.
 
 É um desvio do PEP 8, e fica registrado aqui. Não reformatar o projeto para 79 nem 88.
 
@@ -19,5 +19,5 @@ Medido em `src/` e `tests/` em `c923f58`: 131 linhas passam de 79, 92 passam de 
 
 ## Evidência
 
-- `pyproject.toml:27` (`line-length`), `:29-31` (as regras).
+- `pyproject.toml:29` (`line-length`), `:32-33` (as regras).
 - `Dockerfile:37-38` (`ruff check` e `ruff format --check` no estágio `teste`).

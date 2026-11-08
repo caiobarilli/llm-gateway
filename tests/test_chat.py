@@ -6,8 +6,8 @@ import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
-from llm_gateway.chat import LIMITE_DE_CARACTERES, LIMITE_DE_TOKENS, LIMITE_DO_CORPO, TOKENS_PADRAO
-from llm_gateway.ollama import CONTEXTO
+from llm_gateway.chat import tokens_por_segundo
+from llm_gateway.ollama import MensagemOllama, RespostaOllama
 from tests.conftest import MODELO, TOKEN, OllamaFalso, autorizacao, resposta_do_ollama
 
 ESQUEMA = {
@@ -71,7 +71,7 @@ def test_traduz_o_pedido_para_o_api_chat_do_ollama(cliente: TestClient, ollama: 
                 "messages": pedido()["messages"],
                 "stream": False,
                 "format": ESQUEMA,
-                "options": {"num_ctx": CONTEXTO, "num_predict": 300, "temperature": 0.7},
+                "options": {"num_ctx": 4096, "num_predict": 300, "temperature": 0.7},
             },
         }
     ]
@@ -88,7 +88,7 @@ def test_sem_response_format_nem_temperatura_usa_os_padroes(cliente: TestClient,
     assert resposta.json()["choices"][0]["message"]["content"] == "texto livre, não JSON"
     enviado = ollama.pedidos[0]["corpo"]
     assert "format" not in enviado
-    assert enviado["options"] == {"num_ctx": CONTEXTO, "num_predict": TOKENS_PADRAO}
+    assert enviado["options"] == {"num_ctx": 4096, "num_predict": 512}
 
 
 @pytest.mark.parametrize(("done_reason", "finish_reason"), [("stop", "stop"), ("length", "length"), (None, "stop")])
@@ -118,6 +118,33 @@ def test_stream_true_responde_400(cliente: TestClient, ollama: OllamaFalso) -> N
     assert ollama.pedidos == []
 
 
+def test_max_tokens_1024_e_aceito_e_chega_ao_ollama_como_num_predict(cliente: TestClient, ollama: OllamaFalso) -> None:
+    resposta = chat(cliente, pedido(max_tokens=1024))
+
+    assert resposta.status_code == 200
+    assert ollama.pedidos[0]["corpo"]["options"]["num_predict"] == 1024
+
+
+def test_o_contexto_e_fixo_em_4096_e_nao_vem_do_pedido(cliente: TestClient, ollama: OllamaFalso) -> None:
+    chat(cliente, pedido())
+
+    assert ollama.pedidos[0]["corpo"]["options"]["num_ctx"] == 4096
+
+
+def test_redirecionamento_do_upstream_nao_e_seguido(cliente: TestClient, ollama: OllamaFalso) -> None:
+    async def redirecionar(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(307, headers={"Location": "http://outro-host.test/api/chat"})
+
+    ollama.responder = redirecionar
+
+    resposta = chat(cliente, pedido())
+
+    assert resposta.status_code == 502
+    assert erro(resposta)["code"] == "upstream_erro"
+    assert len(ollama.pedidos) == 1
+    assert "outro-host" not in resposta.text
+
+
 def test_modelo_fora_da_allowlist_responde_404(cliente: TestClient, ollama: OllamaFalso) -> None:
     resposta = chat(cliente, pedido(model="qwen3:4b"))
 
@@ -141,8 +168,8 @@ def test_sem_token_responde_401_sem_chamar_o_ollama(cliente: TestClient, ollama:
         ({"messages": [{"role": "tool", "content": "x"}]}, "messages.0.role"),
         ({"messages": [{"role": "user", "content": ["parte"]}]}, "messages.0.content"),
         ({"messages": [{"role": "user", "content": "x"}] * 9}, "messages"),
-        ({"messages": [{"role": "user", "content": "x" * (LIMITE_DE_CARACTERES + 1)}]}, "messages.0.content"),
-        ({"max_tokens": LIMITE_DE_TOKENS + 1}, "max_tokens"),
+        ({"messages": [{"role": "user", "content": "x" * 8001}]}, "messages.0.content"),
+        ({"max_tokens": 1025}, "max_tokens"),
         ({"max_tokens": 0}, "max_tokens"),
         ({"temperature": 3}, "temperature"),
         ({"response_format": {"type": "json_object"}}, "response_format.json_schema, response_format.type"),
@@ -231,7 +258,7 @@ def test_nome_do_modelo_com_100_caracteres_passa_pelo_formato_e_cai_na_allowlist
 
 
 def test_soma_das_mensagens_acima_do_limite_responde_400(cliente: TestClient) -> None:
-    metade = "x" * (LIMITE_DE_CARACTERES // 2 + 1)
+    metade = "x" * 4001
     mensagens = [{"role": "user", "content": metade}, {"role": "assistant", "content": metade}]
 
     resposta = chat(cliente, pedido(messages=mensagens))
@@ -250,7 +277,7 @@ def test_corpo_que_nao_e_json_responde_400(cliente: TestClient) -> None:
 
 
 def test_corpo_acima_do_limite_responde_413(cliente: TestClient, ollama: OllamaFalso) -> None:
-    grande = pedido(messages=[{"role": "user", "content": "x" * LIMITE_DO_CORPO}])
+    grande = pedido(messages=[{"role": "user", "content": "x" * 65536}])
 
     resposta = chat(cliente, grande)
 
@@ -259,14 +286,16 @@ def test_corpo_acima_do_limite_responde_413(cliente: TestClient, ollama: OllamaF
     assert ollama.pedidos == []
 
 
-def test_corpo_acima_do_limite_sem_content_length_responde_413(cliente: TestClient) -> None:
+def test_corpo_acima_do_limite_sem_content_length_responde_413(cliente: TestClient, ollama: OllamaFalso) -> None:
     def pedacos() -> Any:
-        yield b'{"model": "' + b"x" * LIMITE_DO_CORPO
+        yield b'{"model": "' + b"x" * 65536
         yield b'"}'
 
     resposta = cliente.post("/v1/chat/completions", content=pedacos(), headers=autorizacao())
 
     assert resposta.status_code == 413
+    assert erro(resposta)["code"] == "corpo_grande_demais"
+    assert ollama.pedidos == []
 
 
 def test_schema_invalido_responde_400(cliente: TestClient, ollama: OllamaFalso) -> None:
@@ -421,6 +450,38 @@ def test_linha_de_metricas_sai_em_json_numa_linha_so(
         "carga_ms",
         "duracao_ms",
     }
+
+
+def resposta_com(contagem: int, duracao: int) -> RespostaOllama:
+    mensagem = MensagemOllama(role="assistant", content="x")
+
+    return RespostaOllama(message=mensagem, eval_count=contagem, eval_duration=duracao)
+
+
+@pytest.mark.parametrize(
+    ("contagem", "duracao", "esperado"),
+    [(27, 540_000_000, 50.0), (10, 3_000_000_000, 3.3), (10, 0, None), (0, 0, None)],
+)
+def test_tokens_por_segundo_arredonda_em_uma_casa_e_some_sem_duracao(
+    contagem: int, duracao: int, esperado: float | None
+) -> None:
+    assert tokens_por_segundo(resposta_com(contagem, duracao)) == esperado
+
+
+def test_sem_eval_duration_a_linha_de_metricas_traz_tokens_por_segundo_nulo(
+    cliente: TestClient, ollama: OllamaFalso, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO)
+    corpo = resposta_do_ollama()
+    del corpo["eval_duration"]
+    ollama.responder_com(**corpo)
+
+    resposta = chat(cliente, pedido())
+
+    assert resposta.status_code == 200
+    (linha,) = linhas_de_metricas(caplog)
+    assert linha["tokens_por_segundo"] is None
+    assert linha["completion_tokens"] == 27
 
 
 def test_prompt_resposta_schema_e_token_nunca_vao_para_o_log(

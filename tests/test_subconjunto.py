@@ -192,6 +192,13 @@ def test_valores_de_enum_e_de_const_e_itens_de_required_sao_dado_e_nao_schema(
     assert chat(cliente, pedido(response_format=formato(esquema))).status_code == 200
 
 
+def test_sub_schema_booleano_passa(cliente: TestClient, ollama: OllamaFalso) -> None:
+    esquema = {"type": "object", "properties": {"livre": True, "proibido": False}}
+    ollama.responder_com(**resposta_do_ollama('{"livre": 1}'))
+
+    assert chat(cliente, pedido(response_format=formato(esquema))).status_code == 200
+
+
 def test_title_e_description_passam(cliente: TestClient, ollama: OllamaFalso) -> None:
     esquema = {"title": "Frase", "description": "Uma frase", "type": "object", "properties": {}}
     ollama.responder_com(**resposta_do_ollama("{}"))

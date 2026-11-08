@@ -112,6 +112,14 @@ curl http://127.0.0.1:8000/v1/chat/completions \
   }'
 ```
 
+### Uso com o SDK da OpenAI
+
+O SDK oficial `openai` (testado com a 3.46.0) funciona apontado para o gateway: `models.list`, `chat.completions.create` com `response_format` do tipo `json_schema` estrito e `parse()` com um modelo Pydantic plano. Os testes de contrato rodam o SDK em processo, sem abrir porta (`tests/test_contrato_openai.py`).
+
+- Parâmetros fora do subconjunto (`top_p`, `n`, `stop`, `user`) e `max_tokens` acima de 1024 dão 400 `invalid_request`.
+- `parse()` com modelo aninhado ou com campo de valor padrão dá 400 `schema_invalido`, porque o schema gerado usa `$defs`, `$ref` e `default` (ADR 0009).
+- O SDK reenvia por padrão um pedido que recebeu 503, e isso inclui o 503 `ocupado`. Não foi testado se ele respeita o `Retry-After`. Quem quer controlar as tentativas passa `max_retries=0`.
+
 ### Limites
 
 | Limite | Valor | Resposta ao passar |
