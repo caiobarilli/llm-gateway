@@ -46,7 +46,7 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 
 ## Limites
 
-Os valores estão em `docs/api.md` e `docs/configuracao.md`. O corpo é lido com teto: o `Content-Length` declarado é conferido antes, e o que chega é contado. A mensagem do 400 cita o caminho dos campos inválidos (até 5, com até 40 caracteres cada), nunca os valores.
+Os valores estão em `docs/api.md` e `docs/configuracao.md`. O corpo é lido com teto: o `Content-Length` declarado é conferido antes, e o que chega é contado. A mensagem do 400 cita só caminhos do schema (até 5, com até 40 caracteres cada). Campo desconhecido aparece como o caminho até ele mais `(campo não permitido)`: nem o valor nem o nome que o cliente inventou voltam na resposta.
 
 ## A saída é dado não confiável
 

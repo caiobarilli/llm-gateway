@@ -127,7 +127,7 @@ As mensagens são em português. O `code` é estável e é por ele que o consumi
 |---|---|---|
 | `invalid_api_key` | 401 | Cabeçalho ausente, malformado ou token errado. A resposta leva `WWW-Authenticate: Bearer` e a mesma mensagem para os três casos. |
 | `token_indisponivel` | 503 | O arquivo do token está ausente, ilegível, vazio ou fora de ASCII. Nenhum token passa. |
-| `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 campos (`Pedido inválido em: top_p.`). |
+| `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 caminhos de campo do schema (`Pedido inválido em: messages.0.role.`). Campo desconhecido aparece só como o caminho até ele e `(campo não permitido)` (`Pedido inválido em: corpo (campo não permitido).`), sem o nome nem o valor que o cliente mandou. |
 | `stream_nao_suportado` | 400 | `stream: true`. |
 | `mensagens_grandes_demais` | 400 | A soma dos caracteres das mensagens passa de 8000. |
 | `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido. |

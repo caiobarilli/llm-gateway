@@ -90,7 +90,7 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 2. Algum campo de entrada sem limite ou sem `extra="forbid"`?
 3. Algum caminho chega ao Ollama sem passar pela allowlist e pelo `Limitador`?
 4. Alguma mensagem de erro ou linha de log carrega dado do pedido, da resposta
-   ou do token?
+   ou do token? Isso inclui nome de campo que o cliente inventou.
 5. Dependência nova: versão exata, lock, licença compatível com MIT, e por que
    ela é necessária?
 6. Dockerfile: digest mantido, usuário 10002 mantido, nada de pacote extra na

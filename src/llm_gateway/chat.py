@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic_core import ErrorDetails
 
 from llm_gateway.concorrencia import Limitador
 from llm_gateway.config import Config
@@ -83,11 +84,19 @@ async def ler_corpo(request: Request) -> bytes:
     return bytes(corpo)
 
 
+def _caminho_do_erro(falha: ErrorDetails) -> str:
+    desconhecido = falha["type"] == "extra_forbidden"
+    local = falha["loc"][:-1] if desconhecido else falha["loc"]
+    caminho = ".".join(str(parte)[:40] for parte in local) or "corpo"
+
+    return f"{caminho} (campo não permitido)" if desconhecido else caminho
+
+
 def interpretar(corpo: bytes) -> Pedido:
     try:
         pedido = Pedido.model_validate_json(corpo)
     except ValidationError as erro:
-        campos = sorted({".".join(str(parte)[:40] for parte in falha["loc"]) or "corpo" for falha in erro.errors()})
+        campos = sorted({_caminho_do_erro(falha) for falha in erro.errors()})
         raise _invalido(f"Pedido inválido em: {', '.join(campos[:5])}.") from None
 
     if pedido.stream:

@@ -136,7 +136,7 @@ def test_sem_token_responde_401_sem_chamar_o_ollama(cliente: TestClient, ollama:
 @pytest.mark.parametrize(
     ("campos", "trecho"),
     [
-        ({"n": 2}, "n"),
+        ({"n": 2}, "corpo (campo não permitido)"),
         ({"messages": []}, "messages"),
         ({"messages": [{"role": "tool", "content": "x"}]}, "messages.0.role"),
         ({"messages": [{"role": "user", "content": ["parte"]}]}, "messages.0.content"),
@@ -145,8 +145,11 @@ def test_sem_token_responde_401_sem_chamar_o_ollama(cliente: TestClient, ollama:
         ({"max_tokens": LIMITE_DE_TOKENS + 1}, "max_tokens"),
         ({"max_tokens": 0}, "max_tokens"),
         ({"temperature": 3}, "temperature"),
-        ({"response_format": {"type": "json_object"}}, "response_format"),
-        ({"response_format": {"type": "json_schema", "json_schema": {"name": "a b", "schema": {}}}}, "name"),
+        ({"response_format": {"type": "json_object"}}, "response_format.json_schema, response_format.type"),
+        (
+            {"response_format": {"type": "json_schema", "json_schema": {"name": "a b", "schema": {}}}},
+            "response_format.json_schema.name",
+        ),
     ],
 )
 def test_pedido_fora_do_subconjunto_responde_400_sem_chamar_o_ollama(
@@ -156,7 +159,54 @@ def test_pedido_fora_do_subconjunto_responde_400_sem_chamar_o_ollama(
 
     assert resposta.status_code == 400
     assert erro(resposta)["code"] == "invalid_request"
-    assert trecho in erro(resposta)["message"]
+    assert erro(resposta)["message"] == f"Pedido inválido em: {trecho}."
+    assert ollama.pedidos == []
+
+
+NOME_INVENTADO = 'x\ny"z<script>'
+VALOR_INVENTADO = "valor-que-so-o-cliente-escreveu"
+
+
+@pytest.mark.parametrize(
+    ("onde", "esperado"),
+    [
+        ("raiz", "corpo (campo não permitido)"),
+        ("mensagem", "messages.0 (campo não permitido)"),
+        ("response_format", "response_format (campo não permitido)"),
+        ("json_schema", "response_format.json_schema (campo não permitido)"),
+    ],
+)
+def test_campo_desconhecido_nunca_ecoa_o_nome_nem_o_valor(
+    cliente: TestClient, ollama: OllamaFalso, onde: str, esperado: str
+) -> None:
+    corpo = pedido()
+    alvo = {
+        "raiz": corpo,
+        "mensagem": corpo["messages"][0],
+        "response_format": corpo["response_format"],
+        "json_schema": corpo["response_format"]["json_schema"],
+    }[onde]
+    alvo[NOME_INVENTADO] = VALOR_INVENTADO
+
+    resposta = chat(cliente, corpo)
+
+    assert resposta.status_code == 400
+    assert erro(resposta)["code"] == "invalid_request"
+    assert erro(resposta)["message"] == f"Pedido inválido em: {esperado}."
+    for inventado in ("script", "x\\ny", VALOR_INVENTADO):
+        assert inventado not in resposta.text
+    assert ollama.pedidos == []
+
+
+def test_a_mensagem_do_400_lista_no_maximo_5_caminhos(cliente: TestClient, ollama: OllamaFalso) -> None:
+    mensagens = [{"role": "tool", "content": "x"}] * 8
+
+    resposta = chat(cliente, pedido(messages=mensagens))
+
+    assert resposta.status_code == 400
+    caminhos = erro(resposta)["message"].removeprefix("Pedido inválido em: ").removesuffix(".").split(", ")
+    assert len(caminhos) == 5
+    assert all(caminho.startswith("messages.") and caminho.endswith(".role") for caminho in caminhos)
     assert ollama.pedidos == []
 
 

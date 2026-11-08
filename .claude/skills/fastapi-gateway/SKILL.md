@@ -53,7 +53,10 @@ regra abaixo existe para que ele continue pequeno e fechado.
   e é convertido em `registrar_tratadores` (`erros.py`). Nunca devolva
   `HTTPException` crua nem traceback.
 - Mensagens em português, curtas, sem eco do conteúdo do pedido, do token ou
-  da resposta do modelo.
+  da resposta do modelo. Nunca valores nem nomes vindos do cliente: só
+  caminhos do schema. Campo desconhecido é `<caminho do pai> (campo não
+  permitido)`. A exceção documentada é o `model_not_found`, que cita o nome
+  do modelo (até 100 caracteres).
 - Códigos estáveis (`invalid_api_key`, `model_not_found`, `ocupado`,
   `saida_invalida`, `upstream_timeout`…): o PHParrot traduz por eles. Mudar um
   código é mudança de contrato.
@@ -104,5 +107,6 @@ indica só para protótipo).
 - [ ] Rota nova está em `/v1` ou tem ADR dizendo por que é pública.
 - [ ] Todo campo de entrada tem limite e `extra="forbid"`.
 - [ ] Todo erro é `ErroOpenAI` com código estável.
-- [ ] Nada do pedido ou da resposta aparece em log ou mensagem de erro.
+- [ ] Nada do pedido ou da resposta aparece em log ou mensagem de erro, nem
+      valor nem nome de campo inventado pelo cliente.
 - [ ] O upstream só recebe `/api/chat`.
