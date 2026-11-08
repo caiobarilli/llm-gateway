@@ -31,5 +31,5 @@ O gateway aceita um subconjunto de JSON Schema (Draft 2020-12), conferido em `pr
 
 ## Evidência
 
-- `src/llm_gateway/subconjunto.py:5-28` (a lista e os tetos), `:57-86` (a varredura) e `:89-90` (`exigir_subconjunto`). `src/llm_gateway/chat.py:117` (a chamada, antes do `check_schema`).
-- `tests/test_subconjunto.py:110` (o schema exato do PHParrot, com `name: "item"` e `strict: true`, chega inteiro ao Ollama), `:123` (cada palavra proibida em quatro posições), `:130` (`$ref` remoto e `ftp://` com zero acessos a um listener de teste), `:148` (`$ref` local e `file://`), `:154` (`pattern`, e uma propriedade chamada `pattern` passa), `:165` e `:178` (nomes, `enum`, `const` e `required` são dado), `:203`, `:212`, `:225` e `:245` (os tetos nos dois lados).
+- `src/llm_gateway/subconjunto.py:5-28` (a lista e os tetos), `:57-86` (a varredura) e `:89-90` (`exigir_subconjunto`). `src/llm_gateway/chat.py:176` (a chamada, antes do `check_schema`).
+- `tests/test_subconjunto.py:110` (o schema exato do PHParrot, com `name: "item"` e `strict: true`, chega inteiro ao Ollama), `:123` (cada palavra proibida em quatro posições), `:130` (`$ref` remoto e `ftp://` com zero acessos a um listener de teste), `:148` (`$ref` local e `file://`), `:154` (`pattern`, e uma propriedade chamada `pattern` passa), `:165` e `:178` (nomes, `enum`, `const` e `required` são dado), `:210`, `:219`, `:232` e `:252` (os tetos nos dois lados).

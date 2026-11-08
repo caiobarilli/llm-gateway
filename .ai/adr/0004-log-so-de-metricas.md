@@ -24,9 +24,9 @@ O prompt e a resposta têm texto do usuário e do modelo. O token autoriza o uso
 
 ## Evidência
 
-- `src/llm_gateway/chat.py:194-203` (as métricas), `:224-231` (os dois `except`) e `:232-234` (o `finally`), `src/llm_gateway/registro.py:10-20` (`FormatoJson`) e `:42-43` (`registrar_metricas`).
+- `src/llm_gateway/chat.py:254-264` (as métricas), `:285-291` (os dois `except`) e `:293-295` (o `finally`), `src/llm_gateway/registro.py:10-20` (`FormatoJson`) e `:42-43` (`registrar_metricas`).
 - `src/llm_gateway/autenticacao.py:19`, `:23`, `:27` e `:38` (o que a autenticação registra).
-- `tests/test_chat.py:375` (uma linha por pedido), `:403` (JSON numa linha só) e `:426` (prompt, resposta, schema e token nunca vão para o log).
-- `tests/test_erro_interno.py:48` (o 500 inesperado em três pontos, com valores marcados, sem nada em `out` nem em `err`, a vaga devolvida e `erro` com o nome da classe).
+- `tests/test_chat.py:404` (uma linha por pedido), `:432` (JSON numa linha só) e `:487` (prompt, resposta, schema e token nunca vão para o log).
+- `tests/test_erro_interno.py:49` (o 500 inesperado em três pontos, com valores marcados, sem nada em `out` nem em `err`, a vaga devolvida e `erro` com o nome da classe).
 - `tests/test_autenticacao.py:131` (o token não aparece no log nem na resposta).
 - `Dockerfile:70` (as flags do uvicorn).

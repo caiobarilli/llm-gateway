@@ -44,7 +44,7 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 
 ## Allowlist
 
-`GATEWAY_MODELOS` é a autorização. O modelo do pedido é conferido antes de qualquer chamada ao Ollama (`src/llm_gateway/modelos.py:7-16`). O nome do modelo tem até 100 caracteres: mais que isso dá 400 `invalid_request` antes da allowlist. A mensagem do 404 cita o nome recebido.
+`GATEWAY_MODELOS` é a autorização. O modelo do pedido é conferido antes de qualquer chamada ao Ollama (`src/llm_gateway/modelos.py:11-20`). O nome do modelo tem até 100 caracteres: mais que isso dá 400 `invalid_request` antes da allowlist. A mensagem do 404 cita o nome recebido.
 
 ## Limites
 
@@ -64,7 +64,7 @@ O gateway não interpreta nem executa o que o modelo devolve.
 
 ## Logs
 
-Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 0004). Uma exceção inesperada na rota do chat vira 500 `erro_interno` e deixa na linha só o nome da classe (`erro`), nunca a mensagem. Nunca entram token, cabeçalho `Authorization`, prompt, mensagens, resposta nem schema. Os testes `tests/test_chat.py:354` e `tests/test_autenticacao.py:131` provam isso com valores marcados e com o log em `DEBUG`.
+Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 0004). Uma exceção inesperada na rota do chat vira 500 `erro_interno` e deixa na linha só o nome da classe (`erro`), nunca a mensagem. Nunca entram token, cabeçalho `Authorization`, prompt, mensagens, resposta nem schema. Os testes `tests/test_chat.py:487` e `tests/test_autenticacao.py:131` provam isso com valores marcados e com o log em `DEBUG`.
 
 ## Imagem
 

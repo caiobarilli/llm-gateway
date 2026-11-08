@@ -10,7 +10,7 @@ Evidência no PHParrot:
 
 - `f7bc8f7`: o bump (`docker/gateway/Dockerfile`, 1 linha).
 - `d44c917`: trava o gateway de volta na 3.13.
-- `864751c`: a mensagem diz que o bump do #12 para 3.15 o quebrou. O `.github/dependabot.yml:41-45` passa a ignorar `semver-minor` e `semver-major` do `python` no gateway.
+- `864751c`: a mensagem diz que o bump do #12 para 3.15 o quebrou. O `.github/dependabot.yml` do PHParrot (`:41-45`) passa a ignorar `semver-minor` e `semver-major` do `python` no gateway.
 
 Código atual: `pyproject.toml:8` (`requires-python = "==3.13.*"`) e `Dockerfile:3` (imagem 3.13.18 por digest).
 
@@ -32,7 +32,7 @@ O layout antigo estava amarrado ao nome `gateway` em três lugares. No PHParrot,
 - `docker/gateway/Dockerfile:51`: `--factory gateway.app:criar_app`.
 - 30 linhas `from gateway.` em `docker/gateway/` (por exemplo `docker/gateway/gateway/app.py:7`).
 
-Código atual: `src/llm_gateway/app.py:7` (`from llm_gateway.autenticacao import exigir_token`), `Dockerfile:23` (`COPY src ./src`) e `Dockerfile:70` (`--factory llm_gateway.app:criar_app`). Ver o ADR 0007.
+Código atual: `src/llm_gateway/app.py:10` (`from llm_gateway.autenticacao import exigir_token`), `Dockerfile:23` (`COPY src ./src`) e `Dockerfile:70` (`--factory llm_gateway.app:criar_app`). Ver o ADR 0007.
 
 ## Recriar o `.git` perde o histórico
 

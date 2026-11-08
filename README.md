@@ -104,7 +104,7 @@ Uma tag `vX.Y.Z` constrói a imagem, varre o digest com o Trivy e publica exatam
 
 ## Consumidor de referência
 
-O [PHParrot](https://github.com/caiobarilli/PHParrot) usa este gateway para gerar textos de treino. O gateway nasceu em `docker/gateway/` dele, e o [ADR 0013](https://github.com/caiobarilli/PHParrot/blob/main/.ai/adr/0013-gateway-de-ia.md) registra o lado do consumidor.
+O [PHParrot](https://github.com/caiobarilli/PHParrot) usa este gateway para gerar textos de treino. O gateway nasceu em `docker/gateway/` dele, e o [ADR 0013](https://github.com/caiobarilli/PHParrot/blob/main/.ai/adr/0013-gateway-de-ia.md) registra o lado do consumidor. Os nomes do lado dele (o container `phparrot-gateway`, o caminho do segredo) são dele: esse container roda a imagem `llm-gateway`.
 
 ## Estrutura
 
@@ -113,6 +113,7 @@ src/llm_gateway/   o pacote: app, autenticação, chat, Ollama, limitador, erros
 tests/             pytest, com o Ollama falso
 tools/             a trava de comentários e o exportador do OpenAPI
 docs/              uso: arquitetura, API, configuração, segurança, operação, desenvolvimento
+.github/           workflows (ci, seguranca, release), scripts do release e Dependabot
 .ai/               regras, teto, pitfalls e ADRs
 .claude/skills/    as skills do projeto
 Dockerfile         estágios dependencias, construcao, teste e a imagem final

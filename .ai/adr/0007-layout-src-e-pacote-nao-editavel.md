@@ -22,6 +22,6 @@ O pacote se chamava `gateway` e vivia em `docker/gateway/` do PHParrot. O nome e
 ## Evidência
 
 - `pyproject.toml:1-3`, `Dockerfile:19`, `:23-25`, `:58` (`COPY --from=construcao`) e `:70`.
-- `src/llm_gateway/app.py:7` (import absoluto), `src/llm_gateway/registro.py:6` (`RAIZ`), `src/llm_gateway/chat.py:21` e `src/llm_gateway/autenticacao.py:9` (`getLogger(__name__)`).
-- `tests/test_registro.py:10` (um logger `llm_gateway.*` chega ao stdout) e `:18` (um logger de fora não chega).
+- `src/llm_gateway/app.py:10` (import absoluto), `src/llm_gateway/registro.py:6` (`RAIZ`), `src/llm_gateway/chat.py:31` e `src/llm_gateway/autenticacao.py:9` (`getLogger(__name__)`).
+- `tests/test_registro.py:14` (um logger `llm_gateway.*` chega ao stdout) e `:22` (um logger de fora não chega).
 - PHParrot, em `864751c`: `docker/gateway/Dockerfile:25`, `:40` e `:51`.

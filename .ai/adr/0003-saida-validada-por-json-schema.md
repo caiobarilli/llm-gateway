@@ -23,5 +23,5 @@ O Ollama aceita `format` com JSON Schema, mas um modelo de 3B pode devolver text
 
 ## Evidência
 
-- `src/llm_gateway/chat.py:112-123` (`preparar_validador`) e `:143-156` (`conferir_saida`). `src/llm_gateway/subconjunto.py` (a lista).
-- `tests/test_chat.py:202` (schema inválido responde 400) e `:225` (saída fora do schema vira 502 sem o conteúdo).
+- `src/llm_gateway/chat.py:171-182` (`preparar_validador`) e `:202-217` (`conferir_saida`). `src/llm_gateway/subconjunto.py` (a lista).
+- `tests/test_chat.py:301` (schema inválido responde 400) e `:324` (saída fora do schema vira 502 sem o conteúdo).

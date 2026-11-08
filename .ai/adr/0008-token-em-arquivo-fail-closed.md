@@ -24,5 +24,5 @@ O token autoriza o uso da GPU de alguém. Variável de ambiente aparece em `dock
 ## Evidência
 
 - `src/llm_gateway/autenticacao.py:15-30` (`ler_token`, com `TAMANHO_MINIMO_DO_TOKEN` na `:12`), `:43-51` (`extrair_bearer`), `:54-56` (`compare_digest`) e `:59-62` (`exigir_token`).
-- `src/llm_gateway/app.py:16` (a dependência no router) e `:44-46` (`/health`).
+- `src/llm_gateway/app.py:20` (a dependência no router) e `:60-62` (`/health`).
 - `tests/test_autenticacao.py:50` (rotação sem reiniciar), `:69`, `:75`, `:81` e `:88` (os quatro casos de 503), `:94` (sem token no servidor, o token certo não passa) e `:102`, `:110` e `:116` (31 caracteres dá 503, 32 passa, o motivo sai no log sem o token).
