@@ -5,6 +5,8 @@ description: Como testar o llm-gateway com pytest — app pela factory com o Oll
 
 # pytest no llm-gateway
 
+Itens marcados com `(alvo)` ainda não existem no repositório. Quem entregar o item remove a marca no mesmo commit.
+
 Os testes provam o comportamento do gateway sem modelo, sem rede e sem token
 real. Se um teste precisa do Ollama de verdade, ele não é deste repositório:
 a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
@@ -18,6 +20,8 @@ a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
 - `app` e `cliente`: `criar_app(config, httpx2.MockTransport(ollama))` dentro
   de um `TestClient`. Nunca suba uvicorn nem abra porta.
 - Reaproveite as fixtures. Fixture nova só quando duas ou mais suítes precisam.
+- `filterwarnings = ["error"]` no `pyproject.toml`: aviso vira falha de teste.
+  Um aviso de dependência se resolve na causa, não com `ignore` genérico.
 
 ## 2. O que todo comportamento novo precisa provar
 
@@ -26,6 +30,10 @@ a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
   não pode chegar ao upstream; o teste confere que `ollama.pedidos` ficou vazio.
 - A linha de métricas daquele pedido (`caplog`, logger do módulo) com o
   conjunto exato de campos.
+
+- O contrato publicado: `tests/test_openapi.py` fixa `gerar() ==
+  docs/openapi.json`. Mexeu em rota, modelo, limite ou código? Regenere o
+  arquivo (`docs/desenvolvimento.md`) no mesmo commit.
 
 ## 3. Segredo e texto fora do log
 
@@ -51,11 +59,15 @@ Regras:
 
 ## 5. Contrato com a OpenAI
 
-- Um teste usa o SDK oficial `openai` (dependência só de dev, versão exata)
-  apontado para o app, e confere `chat.completions.create` e `models.list`.
-  É a prova de que "compatível com a OpenAI" é verdade, não promessa.
+- `tests/test_contrato_openai.py` usa o SDK oficial `openai` (dependência só
+  de dev, versão exata) apontado para o app, com `max_retries=0`, e confere
+  `models.list`, `chat.completions.create` com `json_schema` estrito e
+  `parse()` com modelo plano. É a prova de que "compatível com a OpenAI" é
+  verdade, não promessa.
+- O `TestClient` serve de `http_client` do SDK (os dois usam `httpx2`), então o
+  teste roda em processo, sem subir uvicorn nem abrir porta.
 
-## 6. MCP
+## 6. MCP (alvo, exige ADR)
 
 - As ferramentas são testadas com o cliente em memória do FastMCP
   (`Client(mcp)`): sem token recusa, modelo fora da allowlist recusa,
@@ -63,8 +75,12 @@ Regras:
 
 ## 7. Cobertura
 
-- `pytest --cov=llm_gateway --cov-report=term-missing` no estágio `teste`.
-- O piso fica no `pyproject.toml` (`fail_under`). Ele só sobe.
+- `pytest --cov=llm_gateway --cov-report=term-missing` no estágio `teste`, com
+  ramos (`[tool.coverage.run] branch = true`).
+- O piso fica no `pyproject.toml` (`fail_under`, hoje 98: o medido, arredondado
+  para baixo). Ele só sobe.
+- As únicas linhas sem cobertura são os três `raise erro` defensivos de
+  `erros.py`. Chamar o tratador com o tipo errado seria um teste tautológico.
 - Linha descoberta se resolve com teste do comportamento, não com
   `pragma: no cover`. `no cover` só em código que não existe em runtime.
 
@@ -80,4 +96,4 @@ Regras:
 - [ ] Nenhum teste acessa rede, disco fora de `tmp_path` ou relógio real.
 - [ ] Toda recusa confere status, `code` e que o upstream não foi chamado.
 - [ ] Campo novo de log tem prova de que não carrega texto nem segredo.
-- [ ] Cobertura não caiu.
+- [ ] Cobertura não caiu (piso no `pyproject.toml`).

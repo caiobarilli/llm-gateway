@@ -25,9 +25,9 @@ flowchart LR
 - Token Bearer lido de um arquivo, relido a cada pedido, comparado em tempo constante. Sem token configurado, nada passa.
 - Allowlist de modelos: o que não está na lista nunca chega ao Ollama.
 - Um pedido por vez, sem fila: ocupado responde 503 com `Retry-After`.
-- Saída validada por JSON Schema (Draft 2020-12). Saída inválida ou cortada vira erro 502, sem o texto.
+- Saída validada por um subconjunto de JSON Schema (Draft 2020-12): sem `$ref`, `pattern` nem combinadores. Saída inválida ou cortada vira erro 502, sem o texto.
 - Uma linha de métricas por pedido, sem prompt, resposta, schema nem token.
-- Imagem endurecida: bases por digest, usuário 10002, sem `pip`, e sobe com o sistema de arquivos só leitura.
+- Imagem endurecida: bases por digest, usuário 10002, sem `pip`, `zlib1g` atualizado, e sobe com o sistema de arquivos só leitura.
 
 ## Quickstart
 
@@ -36,7 +36,7 @@ flowchart LR
 ```bash
 docker build -t llm-gateway .
 
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO" && chmod 644 "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO" && chmod 644 "$TOKEN_ARQUIVO"
 
 docker run --rm -p 127.0.0.1:8000:8000 \
   --add-host=host.docker.internal:host-gateway \
@@ -50,15 +50,15 @@ docker run --rm -p 127.0.0.1:8000:8000 \
 
 ```bash
 curl http://127.0.0.1:8000/health
-curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:8000/v1/models
+curl -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" http://127.0.0.1:8000/v1/models
 ```
 
 ### uv
 
 ```bash
-uv sync --frozen --no-dev
+uv sync --locked --no-dev
 
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO"
 
 GATEWAY_TOKEN_ARQUIVO="$TOKEN_ARQUIVO" GATEWAY_MODELOS=llama3.2:3b GATEWAY_CONCORRENCIA=1 \
 GATEWAY_OLLAMA_URL=http://127.0.0.1:11434 \
@@ -82,7 +82,7 @@ Erros saem no formato da OpenAI, com um `code` estável. Corpo, limites, tabela 
 - Rotas fechadas por token: só o `/health` é pública.
 - Corpo de até 64 KiB, 8 mensagens, 8000 caracteres, `max_tokens` até 1024 e campos desconhecidos recusados.
 - `/docs`, `/redoc` e `/openapi.json` ficam desligados em runtime.
-- O gateway só chama `POST /api/chat` no endereço configurado. Nenhum campo do pedido escolhe o destino.
+- O gateway só chama `POST /api/chat` no endereço configurado. O schema do pedido é um subconjunto de JSON Schema: `$ref` é recusado, então nada no pedido faz o gateway buscar uma URL.
 - A porta não é publicada por padrão. Se for, só em `127.0.0.1`.
 
 O modelo de ameaças e o mapa para o OWASP API Top 10 estão em [docs/seguranca.md](docs/seguranca.md).
@@ -91,16 +91,20 @@ O modelo de ameaças e o mapa para o OWASP API Top 10 estão em [docs/seguranca.
 
 O gate é `docker build --target teste .`. Ele roda:
 
-- `ruff`: PEP 8 com linha de 120 (desvio registrado no [ADR 0006](.ai/adr/0006-linha-de-120-desvio-do-pep-8.md)), mais o conjunto `S` de segurança;
-- `mypy --strict`;
-- `pytest`, com o Ollama simulado e sem acesso à rede;
+- `ruff`: PEP 8 com linha de 120 (desvio registrado no [ADR 0006](.ai/adr/0006-linha-de-120-desvio-do-pep-8.md)), mais o conjunto `S` de segurança, o `PT` do pytest e o `ASYNC`;
+- `mypy --strict`, com `warn_unreachable` e `explicit-override`;
+- `pytest`, com o Ollama simulado, sem acesso à rede, aviso como erro e piso de cobertura (linhas e ramos);
 - a trava de comentários: só `# type:` e `# noqa` passam.
 
-Dependências com versão exata e `uv.lock`. Imagens base fixadas por digest. O CI roda a trava e o gate em push e em pull request para o `main`.
+Dependências com versão exata e `uv.lock`. Imagens base fixadas por digest. O CI roda a trava e o gate em push e em pull request para o `main`. O `seguranca.yml` roda o Trivy na imagem final, no Dockerfile e no `uv.lock`, e o Dependabot cuida de `uv`, `docker` e `github-actions`.
+
+## Release
+
+Uma tag `vX.Y.Z` constrói a imagem, varre o digest com o Trivy e publica exatamente esse digest em `ghcr.io/caiobarilli/llm-gateway:X.Y.Z`, com o SBOM anexado e o digest no texto da release (ADR 0011). O consumidor fixa a imagem por digest. A tag nunca é movida, e não existe `latest`. Contrato e versão: [docs/api.md](docs/api.md).
 
 ## Consumidor de referência
 
-O [PHParrot](https://github.com/caiobarilli/PHParrot) usa este gateway para gerar textos de treino. O gateway nasceu em `docker/gateway/` dele, e o [ADR 0013](https://github.com/caiobarilli/PHParrot/blob/main/.ai/adr/0013-gateway-de-ia.md) registra o lado do consumidor.
+O [PHParrot](https://github.com/caiobarilli/PHParrot) usa este gateway para gerar textos de treino. O gateway nasceu em `docker/gateway/` dele, e o [ADR 0013](https://github.com/caiobarilli/PHParrot/blob/main/.ai/adr/0013-gateway-de-ia.md) registra o lado do consumidor. Os nomes do lado dele (o container `phparrot-gateway`, o caminho do segredo) são dele: esse container roda a imagem `llm-gateway`.
 
 ## Estrutura
 
@@ -109,6 +113,7 @@ src/llm_gateway/   o pacote: app, autenticação, chat, Ollama, limitador, erros
 tests/             pytest, com o Ollama falso
 tools/             a trava de comentários e o exportador do OpenAPI
 docs/              uso: arquitetura, API, configuração, segurança, operação, desenvolvimento
+.github/           workflows (ci, seguranca, release), scripts do release e Dependabot
 .ai/               regras, teto, pitfalls e ADRs
 .claude/skills/    as skills do projeto
 Dockerfile         estágios dependencias, construcao, teste e a imagem final

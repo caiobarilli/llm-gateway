@@ -56,7 +56,9 @@ async def test_com_concorrencia_1_o_segundo_chat_leva_503_na_hora(
     assert terceiro.status_code == 200
     assert len(ollama.pedidos) == 2
     assert app.state.limitador.ocupadas == 0
-    status = [registro.__dict__["metricas"]["status"] for registro in caplog.records if registro.name == "gateway.chat"]
+    status = [
+        registro.__dict__["metricas"]["status"] for registro in caplog.records if registro.name == "llm_gateway.chat"
+    ]
     assert sorted(status) == [200, 200, 503]
 
 

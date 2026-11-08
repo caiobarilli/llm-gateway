@@ -2,7 +2,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from llm_gateway.erros import ErroOpenAI
+from llm_gateway.erros import Codigo, ErroOpenAI
 
 ESPERA_SUGERIDA_EM_SEGUNDOS = 10
 
@@ -26,7 +26,7 @@ class Limitador:
                     503,
                     "O gateway está ocupado. Tente de novo em instantes.",
                     "server_error",
-                    "ocupado",
+                    Codigo.OCUPADO,
                     {"Retry-After": str(self._espera_sugerida)},
                 )
             self._ocupadas += 1

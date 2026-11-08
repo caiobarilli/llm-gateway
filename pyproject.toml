@@ -17,7 +17,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mypy==2.4.1",
+    "openai==3.46.0",
     "pytest==9.2.0",
+    "pytest-cov==7.1.0",
     "ruff==0.17.4",
     "types-jsonschema==4.26.0.20261006",
 ]
@@ -27,7 +29,7 @@ target-version = "py313"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF"]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF", "PT", "ASYNC"]
 ignore = ["N818"]
 
 [tool.ruff.lint.per-file-ignores]
@@ -35,6 +37,8 @@ ignore = ["N818"]
 
 [tool.mypy]
 strict = true
+warn_unreachable = true
+enable_error_code = ["explicit-override"]
 python_version = "3.13"
 mypy_path = "src:tools"
 files = ["src", "tests", "tools"]
@@ -43,3 +47,10 @@ files = ["src", "tests", "tools"]
 pythonpath = ["src", "tools"]
 testpaths = ["tests"]
 addopts = "--strict-markers"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+fail_under = 98

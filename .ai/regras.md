@@ -15,6 +15,7 @@
 - Sem nome real de pessoa em `.ai/`, `docs/`, README, código e mensagem de commit. A exceção é o `LICENSE`.
 - Sem marca de ferramenta no código. Não criar `CLAUDE.md` nem `AGENTS.md`.
 - Achado de segurança sem correção no PR vira item em `.ai/pitfalls.md`, com evidência.
+- Release: o Maintainer cria a tag `vX.Y.Z`. Uma tag publicada nunca é movida, e não existe tag `latest` (ADR 0011).
 
 ## Código
 
@@ -32,3 +33,4 @@
 - Rota nova fora de `/v1` sem ADR.
 - Texto do pedido, da resposta, schema ou token em log ou em mensagem de erro.
 - `pip` na imagem final.
+- Mover ou reaproveitar uma tag publicada, e publicar `latest`.

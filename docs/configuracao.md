@@ -15,7 +15,7 @@ A `Config` é montada dentro do `criar_app`. Variável faltando ou inválida lev
 
 ## Detalhes por variável
 
-**`GATEWAY_TOKEN_ARQUIVO`.** O gateway não confere se o arquivo existe ao subir. Ele o lê a cada pedido: arquivo ausente, ilegível, vazio ou fora de ASCII dá 503 `token_indisponivel` (`docs/api.md`). O arquivo precisa ser legível pelo usuário do container (uid 10002). O token nunca vem de variável de ambiente.
+**`GATEWAY_TOKEN_ARQUIVO`.** O gateway não confere se o arquivo existe ao subir. Ele o lê a cada pedido: arquivo ausente, ilegível, vazio, fora de ASCII ou com menos de 32 caracteres (depois do `strip`) dá 503 `token_indisponivel` (`docs/api.md`). Gere o token com `openssl rand -hex 32` (64 caracteres). O arquivo precisa ser legível pelo usuário do container (uid 10002). O token nunca vem de variável de ambiente.
 
 **`GATEWAY_MODELOS`.** É a allowlist. A comparação é exata, com maiúsculas e minúsculas. A ordem da variável é a ordem do `GET /v1/models`. Modelo fora da lista dá 404 `model_not_found` e nunca chega ao Ollama.
 
@@ -29,12 +29,16 @@ Não há variável para estes. Mudar um deles é mudar o código.
 
 | Valor | Constante | Onde |
 |---|---|---|
-| Corpo máximo de 64 KiB | `LIMITE_DO_CORPO` | `src/llm_gateway/chat.py:23` |
-| Mensagens por pedido: 8 | `LIMITE_DE_MENSAGENS` | `src/llm_gateway/chat.py:24` |
-| Caracteres por mensagem e somados: 8000 | `LIMITE_DE_CARACTERES` | `src/llm_gateway/chat.py:25` |
-| `max_tokens` máximo: 1024 | `LIMITE_DE_TOKENS` | `src/llm_gateway/chat.py:26` |
-| `max_tokens` padrão: 512 | `TOKENS_PADRAO` | `src/llm_gateway/chat.py:27` |
-| Nome do modelo: 100 caracteres | `LIMITE_DO_NOME` | `src/llm_gateway/modelos.py:4` |
+| Corpo máximo de 64 KiB | `LIMITE_DO_CORPO` | `src/llm_gateway/chat.py:33` |
+| Mensagens por pedido: 8 | `LIMITE_DE_MENSAGENS` | `src/llm_gateway/chat.py:34` |
+| Caracteres por mensagem e somados: 8000 | `LIMITE_DE_CARACTERES` | `src/llm_gateway/chat.py:35` |
+| `max_tokens` máximo: 1024 | `LIMITE_DE_TOKENS` | `src/llm_gateway/chat.py:36` |
+| `max_tokens` padrão: 512 | `TOKENS_PADRAO` | `src/llm_gateway/chat.py:37` |
+| Nome do modelo: 100 caracteres (mais que isso dá 400 `invalid_request`) | `LIMITE_DO_NOME` | `src/llm_gateway/modelos.py:8` |
+| Nós do schema do pedido: 64 | `LIMITE_DE_NOS` | `src/llm_gateway/subconjunto.py:25` |
+| Profundidade do schema do pedido: 6 | `LIMITE_DE_PROFUNDIDADE` | `src/llm_gateway/subconjunto.py:26` |
+| Teto de `minLength`, `maxLength`, `minItems` e `maxItems` no schema: 4096 | `TETO_NUMERICO` | `src/llm_gateway/subconjunto.py:27` |
+| Itens de um `enum` no schema: 64 | `LIMITE_DO_ENUM` | `src/llm_gateway/subconjunto.py:28` |
 | Conexão com o Ollama: 5 s | `TEMPO_DE_CONEXAO` | `src/llm_gateway/ollama.py:8` |
 | Leitura do Ollama: 60 s | `TEMPO_DE_LEITURA` | `src/llm_gateway/ollama.py:9` |
 | Contexto do modelo (`num_ctx`): 4096 | `CONTEXTO` | `src/llm_gateway/ollama.py:10` |
@@ -42,4 +46,4 @@ Não há variável para estes. Mudar um deles é mudar o código.
 
 ## O servidor
 
-A imagem sobe `uvicorn --factory llm_gateway.app:criar_app --host 0.0.0.0 --port 8000 --no-access-log --no-server-header` (`Dockerfile:60`). A porta 8000 é a do container. Publicá-la, e onde, é decisão de quem roda a imagem (`docs/operacao.md`).
+A imagem sobe `uvicorn --factory llm_gateway.app:criar_app --host 0.0.0.0 --port 8000 --no-access-log --no-server-header` (`Dockerfile:70`). A porta 8000 é a do container. Publicá-la, e onde, é decisão de quem roda a imagem (`docs/operacao.md`).

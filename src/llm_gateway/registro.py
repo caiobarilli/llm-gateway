@@ -1,13 +1,14 @@
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, override
 
-RAIZ = "gateway"
+RAIZ = "llm_gateway"
 ATRIBUTO_DAS_METRICAS = "metricas"
 
 
 class FormatoJson(logging.Formatter):
+    @override
     def format(self, record: logging.LogRecord) -> str:
         linha: dict[str, Any] = {"nivel": record.levelname.lower(), "evento": record.getMessage()}
         metricas = getattr(record, ATRIBUTO_DAS_METRICAS, None)
@@ -18,6 +19,7 @@ class FormatoJson(logging.Formatter):
 
 
 class SaidaPadrao(logging.Handler):
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         try:
             sys.stdout.write(self.format(record) + "\n")

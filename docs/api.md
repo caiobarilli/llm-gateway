@@ -1,10 +1,10 @@
 # API
 
-Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Authorization: Bearer <token>`. Qualquer outro caminho responde 404 `not_found`, inclusive `/docs`, `/redoc` e `/openapi.json`.
+Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Authorization: Bearer <token>`. Qualquer outro caminho responde 404 `not_found`, inclusive `/docs`, `/redoc` e `/openapi.json`. A barra final também: `/health/` e `/v1/models/` dão 404, sem redirecionamento e sem cabeçalho `Location`.
 
-O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara.
+O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory e traz as respostas de cada rota: o `200` do chat (`RespostaDoChat`), o corpo de erro (`CorpoDeErro`, com o enum de `code`), o `Retry-After` do 503 e o `WWW-Authenticate` do 401. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara. A versão do arquivo (`info.version`) é a do pacote. Um teste garante que o arquivo é exatamente o que a factory gera (`tests/test_openapi.py`).
 
-Os exemplos usam o token fictício `exemplo-nao-use-em-producao`.
+Os exemplos usam o token fictício `exemplo-nao-use-em-producao-0123456789`.
 
 ## `GET /health`
 
@@ -22,14 +22,14 @@ curl http://127.0.0.1:8000/health
 - Resposta: `200` com a allowlist, na ordem de `GATEWAY_MODELOS`.
 
 ```bash
-curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:8000/v1/models
+curl -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" http://127.0.0.1:8000/v1/models
 ```
 
 ```json
-{"object":"list","data":[{"id":"llama3.2:3b","object":"model","created":0,"owned_by":"phparrot"}]}
+{"object":"list","data":[{"id":"llama3.2:3b","object":"model","created":0,"owned_by":"llm-gateway"}]}
 ```
 
-O `created` é sempre 0 e o `owned_by` é fixo.
+O `created` é sempre 0 e o `owned_by` é sempre `llm-gateway`.
 
 ## `POST /v1/chat/completions`
 
@@ -41,13 +41,13 @@ O `created` é sempre 0 e o `owned_by` é fixo.
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `model` | string | Obrigatório, até 100 caracteres, e precisa estar na allowlist. |
+| `model` | string | Obrigatório, até 100 caracteres (mais que isso dá 400 `invalid_request`), e precisa estar na allowlist. |
 | `messages` | lista | De 1 a 8 mensagens. |
 | `messages[].role` | string | `system`, `user` ou `assistant`. |
 | `messages[].content` | string | Até 8000 caracteres. A soma de todas as mensagens também fica em 8000. |
 | `response_format` | objeto | Opcional. `type` só pode ser `json_schema`. |
 | `response_format.json_schema.name` | string | De 1 a 64 caracteres, `[A-Za-z0-9_-]`. |
-| `response_format.json_schema.schema` | objeto | JSON Schema Draft 2020-12, validado como schema. |
+| `response_format.json_schema.schema` | objeto | Subconjunto de JSON Schema Draft 2020-12, validado como schema. Veja a lista abaixo. |
 | `response_format.json_schema.description` | string | Opcional, até 512 caracteres. Não é repassada ao Ollama. |
 | `response_format.json_schema.strict` | booleano | Opcional. Não é repassado ao Ollama. |
 | `temperature` | número | Opcional, de 0 a 2. |
@@ -55,6 +55,16 @@ O `created` é sempre 0 e o `owned_by` é fixo.
 | `stream` | booleano | Opcional. `true` é recusado. |
 
 Campo fora desta tabela é recusado com 400, não ignorado. O contexto (`num_ctx`) é fixo em 4096 e não vem do pedido.
+
+### O subconjunto de JSON Schema
+
+O schema vai inteiro para o Ollama (`format`) e valida a saída do modelo. Por isso o gateway aceita só estas palavras-chave: `type`, `properties`, `required`, `additionalProperties`, `items`, `enum`, `const`, `minLength`, `maxLength`, `minItems`, `maxItems`, `minimum`, `maximum`, `title` e `description`. A lista também está no OpenAPI, em `x-palavras-chave`.
+
+- Qualquer outra chave dá 400 `schema_invalido`: as que começam com `$` (`$ref`, `$defs`, `$schema`, `$id`), `pattern`, `patternProperties`, `format`, os combinadores (`allOf`, `anyOf`, `oneOf`, `not`, `if`), `default`, `examples`. A mensagem não cita a palavra.
+- Nomes de campo dentro de `properties`, valores de `enum` e de `const` e itens de `required` são dado: uma propriedade chamada `pattern` vale.
+- Tetos: 64 nós de schema, profundidade 6 (a raiz é o nível 1), inteiros de 0 a 4096 em `minLength`, `maxLength`, `minItems` e `maxItems`, e até 64 itens em `enum`. Passar de um teto também dá 400 `schema_invalido`.
+- O gateway nunca busca um `$ref`, local ou remoto. O `parse()` do SDK `openai` com modelos Pydantic aninhados gera `$defs` e `$ref`, e por isso dá 400 `schema_invalido`. O mesmo vale para campo com valor padrão (`default`). Modelo plano passa.
+- Mudar a lista é mudança de contrato (ADR 0009).
 
 ### Resposta 200
 
@@ -81,7 +91,7 @@ O `finish_reason` é `stop` ou `length`. Sem `response_format`, a saída do mode
 
 ```bash
 curl http://127.0.0.1:8000/v1/chat/completions \
-  -H "Authorization: Bearer exemplo-nao-use-em-producao" \
+  -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "llama3.2:3b",
@@ -102,6 +112,14 @@ curl http://127.0.0.1:8000/v1/chat/completions \
   }'
 ```
 
+### Uso com o SDK da OpenAI
+
+O SDK oficial `openai` (testado com a 3.46.0) funciona apontado para o gateway: `models.list`, `chat.completions.create` com `response_format` do tipo `json_schema` estrito e `parse()` com um modelo Pydantic plano. Os testes de contrato rodam o SDK em processo, sem abrir porta (`tests/test_contrato_openai.py`).
+
+- Parâmetros fora do subconjunto (`top_p`, `n`, `stop`, `user`) e `max_tokens` acima de 1024 dão 400 `invalid_request`.
+- `parse()` com modelo aninhado ou com campo de valor padrão dá 400 `schema_invalido`, porque o schema gerado usa `$defs`, `$ref` e `default` (ADR 0009).
+- O SDK reenvia por padrão um pedido que recebeu 503, e isso inclui o 503 `ocupado`. Não foi testado se ele respeita o `Retry-After`. Quem quer controlar as tentativas passa `max_retries=0`.
+
 ### Limites
 
 | Limite | Valor | Resposta ao passar |
@@ -112,6 +130,18 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 | Caracteres somados | 8000 | 400 `mensagens_grandes_demais` |
 | `max_tokens` | 1024 | 400 `invalid_request` |
 | Pedidos ao mesmo tempo | `GATEWAY_CONCORRENCIA` | 503 `ocupado` com `Retry-After: 10` |
+
+## Versão e compatibilidade
+
+Enquanto a versão é `0.y`, sobe o minor para qualquer mudança de contrato, e o patch é seguro. Conta como contrato:
+
+- o OpenAPI (`docs/openapi.json`);
+- as tabelas de erros e de limites desta página;
+- uma validação mais estrita, como o subconjunto de JSON Schema;
+- um `code` novo num caminho que já existia (o consumidor de referência trata `code` fora da lista como `desconhecido`);
+- as variáveis `GATEWAY_*`, a porta 8000, o uid 10002 e a exigência de sistema de arquivos só leitura.
+
+A partir da 1.0, semver normal. A `info.version` do OpenAPI, a versão do `pyproject.toml` e a tag da release são o mesmo número (ADR 0011).
 
 ## Erros
 
@@ -126,13 +156,13 @@ As mensagens são em português. O `code` é estável e é por ele que o consumi
 | `code` | Status | Quando acontece |
 |---|---|---|
 | `invalid_api_key` | 401 | Cabeçalho ausente, malformado ou token errado. A resposta leva `WWW-Authenticate: Bearer` e a mesma mensagem para os três casos. |
-| `token_indisponivel` | 503 | O arquivo do token está ausente, ilegível, vazio ou fora de ASCII. Nenhum token passa. |
-| `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 campos (`Pedido inválido em: top_p.`). |
+| `token_indisponivel` | 503 | O arquivo do token está ausente, ilegível, vazio, fora de ASCII ou com menos de 32 caracteres depois do `strip`. Nenhum token passa. |
+| `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 caminhos de campo do schema (`Pedido inválido em: messages.0.role.`). Campo desconhecido aparece só como o caminho até ele e `(campo não permitido)` (`Pedido inválido em: corpo (campo não permitido).`), sem o nome nem o valor que o cliente mandou. |
 | `stream_nao_suportado` | 400 | `stream: true`. |
 | `mensagens_grandes_demais` | 400 | A soma dos caracteres das mensagens passa de 8000. |
-| `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido. |
+| `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido, usa palavra-chave fora do subconjunto ou passa de um teto. |
 | `corpo_grande_demais` | 413 | O corpo passa de 64 KiB. |
-| `model_not_found` | 404 | O modelo não está na allowlist. A mensagem cita o nome, cortado em 100 caracteres. |
+| `model_not_found` | 404 | O modelo não está na allowlist. A mensagem cita o nome, que tem até 100 caracteres. |
 | `not_found` | 404 | Rota inexistente. |
 | `method_not_allowed` | 405 | Método não aceito pela rota. |
 | `ocupado` | 503 | Sem vaga no `Limitador`. A resposta leva `Retry-After: 10`. |
@@ -148,4 +178,4 @@ Nenhum erro devolve o texto do pedido, o texto do modelo ou o corpo do upstream.
 
 ### Ordem das recusas
 
-Na ordem em que o código confere: token, tamanho do corpo, formato do pedido, modelo, schema, vaga, upstream, saída. Um pedido com campo desconhecido e modelo fora da lista recebe 400, não 404.
+Na ordem em que o código confere: token, tamanho do corpo, formato do pedido, modelo, schema (subconjunto e validade), vaga, upstream, saída. Um pedido com campo desconhecido e modelo fora da lista recebe 400, não 404.

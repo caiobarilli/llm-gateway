@@ -58,8 +58,8 @@ def test_rotacao_no_lugar_vale_sem_reiniciar(cliente: TestClient, arquivo_do_tok
     assert cliente.get("/v1/models", headers=autorizacao(novo)).status_code == 200
 
 
-def assert_indisponivel(cliente: TestClient) -> None:
-    resposta = cliente.get("/v1/models", headers=autorizacao())
+def assert_indisponivel(cliente: TestClient, cabecalhos: dict[str, str] | None = None) -> None:
+    resposta = cliente.get("/v1/models", headers=autorizacao() if cabecalhos is None else cabecalhos)
 
     assert resposta.status_code == 503
     assert resposta.json()["error"]["code"] == "token_indisponivel"
@@ -94,8 +94,38 @@ def test_arquivo_que_nao_e_ascii_fecha_com_503(cliente: TestClient, arquivo_do_t
 def test_sem_token_no_servidor_nem_o_token_certo_passa(cliente: TestClient, arquivo_do_token: Path) -> None:
     arquivo_do_token.write_text("")
 
-    assert cliente.get("/v1/models", headers=autorizacao("")).status_code != 200
-    assert cliente.get("/v1/models", headers={"Authorization": "Bearer "}).status_code != 200
+    assert_indisponivel(cliente, autorizacao(""))
+    assert_indisponivel(cliente, {"Authorization": "Bearer "})
+    assert_indisponivel(cliente, autorizacao())
+
+
+def test_token_de_31_caracteres_fecha_com_503_e_o_de_32_passa(cliente: TestClient, arquivo_do_token: Path) -> None:
+    arquivo_do_token.write_text("k" * 31)
+    assert_indisponivel(cliente, autorizacao("k" * 31))
+
+    arquivo_do_token.write_text("k" * 32)
+    assert cliente.get("/v1/models", headers=autorizacao("k" * 32)).status_code == 200
+
+
+def test_o_tamanho_conta_depois_do_strip(cliente: TestClient, arquivo_do_token: Path) -> None:
+    arquivo_do_token.write_text(f"  {'k' * 31}  \n")
+
+    assert_indisponivel(cliente, autorizacao("k" * 31))
+
+
+def test_token_curto_registra_o_motivo_sem_o_token(
+    cliente: TestClient, arquivo_do_token: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    curto = "segredo-curto"
+    arquivo_do_token.write_text(curto)
+    caplog.set_level(logging.DEBUG)
+
+    resposta = cliente.get("/v1/models", headers=autorizacao(curto))
+
+    assert resposta.status_code == 503
+    assert "token indisponível: token curto" in caplog.text
+    assert curto not in caplog.text
+    assert curto not in resposta.text
 
 
 def test_token_nao_aparece_no_log_nem_na_resposta(

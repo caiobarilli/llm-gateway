@@ -5,6 +5,8 @@ description: Padrões do FastAPI no llm-gateway — app criado pela factory cria
 
 # FastAPI no llm-gateway
 
+Itens marcados com `(alvo)` ainda não existem no repositório. Quem entregar o item remove a marca no mesmo commit.
+
 O gateway é um proxy pequeno e fechado entre um app e um modelo local. Cada
 regra abaixo existe para que ele continue pequeno e fechado.
 
@@ -30,6 +32,8 @@ regra abaixo existe para que ele continue pequeno e fechado.
 - `/docs`, `/redoc` e `/openapi.json` ficam desligados em runtime
   (`docs_url=None, redoc_url=None, openapi_url=None`). O OpenAPI é publicado
   como arquivo em `docs/`, gerado a partir da factory.
+- `redirect_slashes=False`: barra final é 404, nunca um `Location` montado pelo
+  cabeçalho `Host`.
 
 ## 3. Entrada: tudo tem limite
 
@@ -39,9 +43,12 @@ regra abaixo existe para que ele continue pequeno e fechado.
   limite em todo texto e lista (`max_length`, `le`). Campo novo sem limite é
   recusado na revisão.
 - O modelo pedido passa por `exigir_modelo_permitido` antes de qualquer coisa
-  chegar ao Ollama. Fora da allowlist: 404 `model_not_found`, com o nome
-  cortado em 100 caracteres na mensagem.
+  chegar ao Ollama. O nome tem até 100 caracteres (`LIMITE_DO_NOME`, 400
+  acima disso). Fora da allowlist: 404 `model_not_found`.
 - `stream: true` não é suportado: recusa clara, não meia implementação.
+- O schema do `response_format` passa por `exigir_subconjunto` antes do
+  `check_schema`. Palavra-chave nova na lista é decisão de contrato, com teste
+  (ADR 0009).
 
 ## 4. Erros no formato da OpenAI
 
@@ -49,10 +56,17 @@ regra abaixo existe para que ele continue pequeno e fechado.
   e é convertido em `registrar_tratadores` (`erros.py`). Nunca devolva
   `HTTPException` crua nem traceback.
 - Mensagens em português, curtas, sem eco do conteúdo do pedido, do token ou
-  da resposta do modelo.
+  da resposta do modelo. Nunca valores nem nomes vindos do cliente: só
+  caminhos do schema. Campo desconhecido é `<caminho do pai> (campo não
+  permitido)`. A exceção documentada é o `model_not_found`, que cita o nome
+  do modelo (até 100 caracteres).
 - Códigos estáveis (`invalid_api_key`, `model_not_found`, `ocupado`,
   `saida_invalida`, `upstream_timeout`…): o PHParrot traduz por eles. Mudar um
-  código é mudança de contrato.
+  código é mudança de contrato. Todo código é um membro de `Codigo`
+  (`erros.py`), que alimenta o enum do OpenAPI. Código novo: membro no enum,
+  linha em `docs/api.md` e `docs/openapi.json` regenerado no mesmo commit.
+- Resposta nova ou status novo numa rota: declare em `responses` e regenere o
+  `docs/openapi.json`. `tests/test_openapi.py` falha se ele divergir da factory.
 
 ## 5. Upstream (Ollama)
 
@@ -75,12 +89,15 @@ regra abaixo existe para que ele continue pequeno e fechado.
 ## 7. Métricas sem texto
 
 - Cada pedido ao chat gera uma linha JSON pelo `registrar_metricas`, sucesso ou
-  erro: modelo, status, código, tokens, tokens por segundo, carga e duração.
+  erro: modelo, status, código, erro (só o nome da classe da exceção), tokens,
+  tokens por segundo, carga e duração.
+- Exceção inesperada dentro de `completar` vira `ErroOpenAI` 500
+  `erro_interno`: nunca deixe o traceback chegar ao uvicorn.
 - Nunca entram: prompt, resposta, schema, token, cabeçalho de autorização.
   Há teste que prova isso; campo novo na linha precisa de teste também.
 - `--no-access-log` e `--no-server-header` no uvicorn continuam.
 
-## 8. MCP (FastMCP)
+## 8. MCP (FastMCP) (alvo, exige ADR)
 
 O servidor MCP é escrito à mão, não convertido da API
 (`FastMCP.from_fastapi` fica proibido: a própria documentação do FastMCP o
@@ -100,5 +117,6 @@ indica só para protótipo).
 - [ ] Rota nova está em `/v1` ou tem ADR dizendo por que é pública.
 - [ ] Todo campo de entrada tem limite e `extra="forbid"`.
 - [ ] Todo erro é `ErroOpenAI` com código estável.
-- [ ] Nada do pedido ou da resposta aparece em log ou mensagem de erro.
+- [ ] Nada do pedido ou da resposta aparece em log ou mensagem de erro, nem
+      valor nem nome de campo inventado pelo cliente.
 - [ ] O upstream só recebe `/api/chat`.

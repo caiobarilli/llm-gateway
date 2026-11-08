@@ -27,4 +27,4 @@ O ADR 0013 do PHParrot continua valendo para o lado do consumidor. Os ADRs 0002 
 ## Evidência
 
 - PHParrot: `61dff6c` (esqueleto do gateway), `1d10117`, `5c260de` e `f958a5e` (infraestrutura, autenticação e chat).
-- Aqui: `src/llm_gateway/app.py:27-50` (a factory `criar_app`).
+- Aqui: `src/llm_gateway/app.py:35-66` (a factory `criar_app`).

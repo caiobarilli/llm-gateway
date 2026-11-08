@@ -4,11 +4,12 @@ from pathlib import Path
 
 from fastapi import Request
 
-from llm_gateway.erros import ErroOpenAI
+from llm_gateway.erros import Codigo, ErroOpenAI
 
-registro = logging.getLogger("gateway.autenticacao")
+registro = logging.getLogger(__name__)
 
 DESAFIO = {"WWW-Authenticate": "Bearer"}
+TAMANHO_MINIMO_DO_TOKEN = 32
 
 
 def ler_token(arquivo: Path) -> str:
@@ -22,17 +23,21 @@ def ler_token(arquivo: Path) -> str:
         registro.warning("token indisponível: arquivo vazio")
         raise _token_indisponivel()
 
+    if len(token) < TAMANHO_MINIMO_DO_TOKEN:
+        registro.warning("token indisponível: token curto")
+        raise _token_indisponivel()
+
     return token
 
 
 def _token_indisponivel() -> ErroOpenAI:
-    return ErroOpenAI(503, "O gateway está sem token configurado.", "server_error", "token_indisponivel")
+    return ErroOpenAI(503, "O gateway está sem token configurado.", "server_error", Codigo.TOKEN_INDISPONIVEL)
 
 
 def _recusa(motivo: str) -> ErroOpenAI:
     registro.info("autenticação recusada: %s", motivo)
 
-    return ErroOpenAI(401, "Token ausente ou inválido.", "invalid_request_error", "invalid_api_key", DESAFIO)
+    return ErroOpenAI(401, "Token ausente ou inválido.", "invalid_request_error", Codigo.INVALID_API_KEY, DESAFIO)
 
 
 def extrair_bearer(cabecalho: str | None) -> str:

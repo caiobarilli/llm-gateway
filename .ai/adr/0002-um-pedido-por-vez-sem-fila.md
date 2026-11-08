@@ -20,5 +20,5 @@ O modelo roda na GPU de um desktop, alcançada por um túnel. No PHParrot, medid
 
 ## Evidência
 
-- `src/llm_gateway/concorrencia.py:7` e `:10-38` (o `Limitador`), `src/llm_gateway/chat.py:199-200` (a vaga em volta de `conversar`).
-- `tests/test_concorrencia.py:15` (o segundo chat leva 503 na hora), `:63` (a vaga volta com exceção) e `:75` (duas vagas aceitam dois e recusam o terceiro).
+- `src/llm_gateway/concorrencia.py:7` e `:10-38` (o `Limitador`), `src/llm_gateway/chat.py:272-273` (a vaga em volta de `conversar`).
+- `tests/test_concorrencia.py:15` (o segundo chat leva 503 na hora), `:65` (a vaga volta com exceção) e `:77` (duas vagas aceitam dois e recusam o terceiro).

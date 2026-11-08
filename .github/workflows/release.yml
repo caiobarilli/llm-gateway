@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TRIVY_VERSAO: v0.76.1
+  IMAGEM: ghcr.io/caiobarilli/llm-gateway
+  REGISTRO_LOCAL: localhost:5000/llm-gateway
+
+jobs:
+  publicar:
+    name: Construir, varrer e publicar
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      packages: write
+    services:
+      registro:
+        image: registry:2
+        ports:
+          - 5000:5000
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Tag
+        id: tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: .github/scripts/validar-tag.sh
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver-opts: network=host
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir
+        id: construcao
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRO_LOCAL }}:varrer
+          no-cache: true
+          provenance: false
+          sbom: false
+
+      - name: Trazer o digest para o daemon
+        env:
+          REFERENCIA: ${{ env.REGISTRO_LOCAL }}@${{ steps.construcao.outputs.digest }}
+        run: docker pull "$REFERENCIA"
+
+      - name: A versão da imagem é a da tag
+        if: steps.tag.outputs.preliminar == 'false'
+        env:
+          REFERENCIA: ${{ env.REGISTRO_LOCAL }}@${{ steps.construcao.outputs.digest }}
+          VERSAO: ${{ steps.tag.outputs.versao }}
+        run: .github/scripts/conferir-versao-da-imagem.sh
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSAO }}
+          scan-type: image
+          image-ref: ${{ env.REGISTRO_LOCAL }}@${{ steps.construcao.outputs.digest }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSAO }}
+          skip-setup-trivy: true
+          scan-type: image
+          image-ref: ${{ env.REGISTRO_LOCAL }}@${{ steps.construcao.outputs.digest }}
+          format: cyclonedx
+          output: sbom.cdx.json
+
+      - name: Publicar o digest varrido
+        id: publicacao
+        env:
+          ORIGEM: ${{ env.REGISTRO_LOCAL }}@${{ steps.construcao.outputs.digest }}
+          DESTINO: ${{ env.IMAGEM }}:${{ steps.tag.outputs.versao }}
+          DIGEST: ${{ steps.construcao.outputs.digest }}
+        run: .github/scripts/publicar.sh
+
+      - name: Nota da release
+        env:
+          ARQUIVO: nota.md
+          VERSAO: ${{ steps.tag.outputs.versao }}
+          DIGEST: ${{ steps.publicacao.outputs.digest }}
+        run: .github/scripts/nota-da-release.sh
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRELIMINAR: ${{ steps.tag.outputs.preliminar }}
+        run: |
+          if [ "$PRELIMINAR" = true ]; then
+            gh release create "$TAG" sbom.cdx.json --title "$TAG" --notes-file nota.md --verify-tag --prerelease
+          else
+            gh release create "$TAG" sbom.cdx.json --title "$TAG" --notes-file nota.md --verify-tag
+          fi

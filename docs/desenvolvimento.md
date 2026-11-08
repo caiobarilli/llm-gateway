@@ -5,8 +5,8 @@
 O projeto usa só o `uv` (`.claude/skills/python-313/SKILL.md`). O Python é o 3.13.
 
 ```bash
-uv sync --frozen
-uv run pytest
+uv sync --locked
+uv run pytest --cov=llm_gateway --cov-report=term-missing
 uv run ruff check .
 uv run ruff format --check .
 uv run python tools/sem_comentario.py
@@ -16,7 +16,7 @@ uv run mypy
 Subir o servidor local, com um token fictício:
 
 ```bash
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO"
 GATEWAY_TOKEN_ARQUIVO="$TOKEN_ARQUIVO" GATEWAY_MODELOS=llama3.2:3b GATEWAY_CONCORRENCIA=1 \
 GATEWAY_OLLAMA_URL=http://127.0.0.1:11434 \
 uv run uvicorn --factory llm_gateway.app:criar_app --host 127.0.0.1 --port 8000
@@ -35,8 +35,8 @@ Ele roda, nesta ordem, e para no primeiro que falhar:
 1. `ruff check .`
 2. `ruff format --check .`
 3. `python tools/sem_comentario.py`
-4. `mypy src tests tools` (modo `strict`)
-5. `pytest`
+4. `mypy src tests tools` (modo `strict`, com `warn_unreachable` e `explicit-override`)
+5. `pytest` (com `filterwarnings = ["error"]`: aviso falha o teste), com cobertura de linhas e ramos (`--cov=llm_gateway`). O piso é o `fail_under` do `pyproject.toml` (hoje 98, o medido arredondado para baixo). Ele só sobe: cobertura abaixo do piso reprova o gate.
 
 O `ci.yml` roda a trava de comentários e depois o mesmo build, em push e em pull request para o `main`. Nenhum teste acessa a rede nem o Ollama de verdade: o upstream é um `httpx2.MockTransport` (`tests/conftest.py`).
 
@@ -61,7 +61,7 @@ EOF
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/w -w /w llm-gateway-uv uv lock
 ```
 
-Confira o diff do `uv.lock` antes de commitar: só as versões que você quis mudar.
+Confira o diff do `uv.lock` antes de commitar: só as versões que você quis mudar. O build usa `--locked`: se o `pyproject.toml` e o `uv.lock` divergirem, o gate falha com `The lockfile at uv.lock needs to be updated, but --locked was provided`.
 
 ## O OpenAPI
 
@@ -79,7 +79,15 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs":/app/docs llm-gateway:
   /app/.venv/bin/python tools/exportar_openapi.py
 ```
 
-Rodar de novo não muda o arquivo. Mudou rota, modelo de entrada ou limite? Gere de novo e commite o arquivo junto.
+Rodar de novo não muda o arquivo. Mudou rota, modelo de entrada, limite ou `code`? Gere de novo e commite o arquivo junto: `tests/test_openapi.py` compara o arquivo com o que a factory gera, e o estágio `teste` copia só o `docs/openapi.json` para isso. Código de erro novo entra no enum `Codigo` (`src/llm_gateway/erros.py`), e o mypy recusa um código que não seja membro dele.
+
+## CI e release
+
+- `ci.yml`: a trava de comentários e o gate (`docker build --target teste .`), em push e em pull request para o `main`.
+- `seguranca.yml`: o Trivy da imagem final, do Dockerfile e do `uv.lock` (`CRITICAL,HIGH`, `ignore-unfixed`, `exit-code 1`), quando o PR mexe em `Dockerfile`, `pyproject.toml`, `uv.lock`, `docs/openapi.json` ou no workflow, e toda segunda-feira. Para rodar à mão sem instalar nada: `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 <imagem>`.
+- `release.yml`: uma tag `vX.Y.Z` constrói a imagem final, varre o digest, publica exatamente esse digest em `ghcr.io/caiobarilli/llm-gateway:X.Y.Z` e cria a release com o SBOM e o digest no texto. Antes de tagar `vX.Y.Z`, o `pyproject.toml` já está em `X.Y.Z` (a `info.version` do OpenAPI vem dele). Uma tag `vX.Y.Z-rcN` é ensaio: não confere a versão e vira pré-lançamento.
+- Nunca mover nem sobrescrever uma tag, e não existe `latest`. O job recusa publicar uma tag de imagem que já existe. Voltar atrás é apontar o consumidor para o digest da versão anterior.
+- Os scripts do release estão em `.github/scripts/` e rodam fora do GitHub: o ensaio local usa dois `registry:2`, um no lugar do registro de varredura e outro no lugar do GHCR.
 
 ## Fluxo de branch e commit
 

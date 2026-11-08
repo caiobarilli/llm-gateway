@@ -29,10 +29,12 @@ flowchart LR
 | `config.py` | Lê as variáveis `GATEWAY_*`. Configuração inválida impede a subida. |
 | `autenticacao.py` | Lê o token do arquivo, extrai o Bearer e compara em tempo constante. |
 | `chat.py` | A rota do chat: lê o corpo com teto, valida o pedido, monta o corpo do Ollama, confere a saída, formata a resposta e registra as métricas. |
+| `subconjunto.py` | A lista de palavras-chave do JSON Schema do pedido e os tetos de nós, profundidade e tamanho. |
 | `modelos.py` | A allowlist: recusa o modelo fora da lista e monta o `GET /v1/models`. |
 | `concorrencia.py` | O `Limitador`: vagas sem espera. |
 | `ollama.py` | O cliente HTTP do upstream, os tempos, o contexto fixo e a tradução de falha de rede em erro do gateway. |
-| `erros.py` | `ErroOpenAI` e os tratadores. Todo erro sai no formato da OpenAI. |
+| `erros.py` | `ErroOpenAI`, o enum `Codigo` e os tratadores. Todo erro sai no formato da OpenAI. |
+| `contrato.py` | As respostas de erro que as rotas declaram no OpenAPI (status, cabeçalhos `Retry-After` e `WWW-Authenticate`). |
 | `registro.py` | O log em JSON, uma linha por evento, no stdout. |
 
 O estado compartilhado fica em `app.state`. Não há variável de módulo mutável. O `criar_app` aceita um `transporte` do `httpx2` para os testes trocarem o upstream.
@@ -45,7 +47,7 @@ Para `POST /v1/chat/completions`, na ordem em que o código executa:
 2. **Corpo.** `ler_corpo` recusa mais de 64 KiB com 413, pelo `Content-Length` ou contando o que chega.
 3. **Pedido.** `interpretar` valida com Pydantic (`extra="forbid"`, limites em todo campo), recusa `stream: true` e confere a soma dos caracteres das mensagens. Falha dá 400.
 4. **Modelo.** `exigir_modelo_permitido` recusa o que não está na allowlist, com 404.
-5. **Schema.** `preparar_validador` valida o `response_format` como JSON Schema (Draft 2020-12). Schema inválido dá 400.
+5. **Schema.** `preparar_validador` confere o subconjunto de palavras-chave e os tetos (`exigir_subconjunto`) e valida o `response_format` como JSON Schema (Draft 2020-12). Fora do subconjunto ou inválido dá 400 `schema_invalido`.
 6. **Vaga.** `Limitador.vaga()` tenta pegar uma vaga. Sem vaga, 503 `ocupado` com `Retry-After`.
 7. **Upstream.** `conversar` faz `POST /api/chat` no Ollama com `stream: false`, `format` (o schema) e `num_ctx` fixo. Falha de rede, tempo esgotado, status diferente de 200 e corpo fora do formato viram 503, 504 e 502, sem repassar o texto do upstream. A vaga é devolvida ao sair.
 8. **Saída.** Com schema, `conferir_saida` recusa resposta cortada pelo `max_tokens` (502 `saida_truncada`) e resposta que não é JSON ou não segue o schema (502 `saida_invalida`).
