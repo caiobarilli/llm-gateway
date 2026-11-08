@@ -62,7 +62,11 @@ regra abaixo existe para que ele continue pequeno e fechado.
   do modelo (até 100 caracteres).
 - Códigos estáveis (`invalid_api_key`, `model_not_found`, `ocupado`,
   `saida_invalida`, `upstream_timeout`…): o PHParrot traduz por eles. Mudar um
-  código é mudança de contrato.
+  código é mudança de contrato. Todo código é um membro de `Codigo`
+  (`erros.py`), que alimenta o enum do OpenAPI. Código novo: membro no enum,
+  linha em `docs/api.md` e `docs/openapi.json` regenerado no mesmo commit.
+- Resposta nova ou status novo numa rota: declare em `responses` e regenere o
+  `docs/openapi.json`. `tests/test_openapi.py` falha se ele divergir da factory.
 
 ## 5. Upstream (Ollama)
 

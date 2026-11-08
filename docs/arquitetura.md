@@ -33,7 +33,8 @@ flowchart LR
 | `modelos.py` | A allowlist: recusa o modelo fora da lista e monta o `GET /v1/models`. |
 | `concorrencia.py` | O `Limitador`: vagas sem espera. |
 | `ollama.py` | O cliente HTTP do upstream, os tempos, o contexto fixo e a tradução de falha de rede em erro do gateway. |
-| `erros.py` | `ErroOpenAI` e os tratadores. Todo erro sai no formato da OpenAI. |
+| `erros.py` | `ErroOpenAI`, o enum `Codigo` e os tratadores. Todo erro sai no formato da OpenAI. |
+| `contrato.py` | As respostas de erro que as rotas declaram no OpenAPI (status, cabeçalhos `Retry-After` e `WWW-Authenticate`). |
 | `registro.py` | O log em JSON, uma linha por evento, no stdout. |
 
 O estado compartilhado fica em `app.state`. Não há variável de módulo mutável. O `criar_app` aceita um `transporte` do `httpx2` para os testes trocarem o upstream.

@@ -1,6 +1,105 @@
 {
   "components": {
     "schemas": {
+      "Codigo": {
+        "enum": [
+          "invalid_api_key",
+          "token_indisponivel",
+          "invalid_request",
+          "stream_nao_suportado",
+          "mensagens_grandes_demais",
+          "schema_invalido",
+          "corpo_grande_demais",
+          "model_not_found",
+          "not_found",
+          "method_not_allowed",
+          "ocupado",
+          "upstream_indisponivel",
+          "upstream_timeout",
+          "upstream_erro",
+          "upstream_resposta_invalida",
+          "saida_truncada",
+          "saida_invalida",
+          "erro_interno"
+        ],
+        "title": "Codigo",
+        "type": "string"
+      },
+      "CorpoDeErro": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/DetalheDoErro"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "CorpoDeErro",
+        "type": "object"
+      },
+      "DetalheDoErro": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Codigo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "param": {
+            "title": "Param",
+            "type": "null"
+          },
+          "type": {
+            "enum": [
+              "invalid_request_error",
+              "server_error"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "type",
+          "code"
+        ],
+        "title": "DetalheDoErro",
+        "type": "object"
+      },
+      "Escolha": {
+        "properties": {
+          "finish_reason": {
+            "enum": [
+              "stop",
+              "length"
+            ],
+            "title": "Finish Reason",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "message": {
+            "$ref": "#/components/schemas/MensagemDaResposta"
+          }
+        },
+        "required": [
+          "index",
+          "message",
+          "finish_reason"
+        ],
+        "title": "Escolha",
+        "type": "object"
+      },
       "EsquemaJson": {
         "additionalProperties": false,
         "properties": {
@@ -26,8 +125,26 @@
           },
           "schema": {
             "additionalProperties": true,
+            "description": "Subconjunto de JSON Schema (Draft 2020-12): só as palavras-chave de x-palavras-chave. Até 64 nós, profundidade 6, inteiros de 0 a 4096 em minLength, maxLength, minItems e maxItems e até 64 itens em enum.",
             "title": "Schema",
-            "type": "object"
+            "type": "object",
+            "x-palavras-chave": [
+              "additionalProperties",
+              "const",
+              "description",
+              "enum",
+              "items",
+              "maxItems",
+              "maxLength",
+              "maximum",
+              "minItems",
+              "minLength",
+              "minimum",
+              "properties",
+              "required",
+              "title",
+              "type"
+            ]
           },
           "strict": {
             "anyOf": [
@@ -68,6 +185,28 @@
         "title": "FormatoDeResposta",
         "type": "object"
       },
+      "ListaDeModelos": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Modelo"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ListaDeModelos",
+        "type": "object"
+      },
       "Mensagem": {
         "additionalProperties": false,
         "properties": {
@@ -91,6 +230,54 @@
           "content"
         ],
         "title": "Mensagem",
+        "type": "object"
+      },
+      "MensagemDaResposta": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "const": "assistant",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "MensagemDaResposta",
+        "type": "object"
+      },
+      "Modelo": {
+        "properties": {
+          "created": {
+            "default": 0,
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "object": {
+            "const": "model",
+            "default": "model",
+            "title": "Object",
+            "type": "string"
+          },
+          "owned_by": {
+            "default": "llm-gateway",
+            "title": "Owned By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "Modelo",
         "type": "object"
       },
       "Pedido": {
@@ -168,6 +355,84 @@
         ],
         "title": "Pedido",
         "type": "object"
+      },
+      "RespostaDoChat": {
+        "properties": {
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/Escolha"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "object": {
+            "const": "chat.completion",
+            "title": "Object",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Uso"
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "created",
+          "model",
+          "choices",
+          "usage"
+        ],
+        "title": "RespostaDoChat",
+        "type": "object"
+      },
+      "Saude": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Saude",
+        "type": "object"
+      },
+      "Uso": {
+        "properties": {
+          "completion_tokens": {
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens"
+        ],
+        "title": "Uso",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -191,11 +456,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Saude Health Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/Saude"
                 }
               }
             },
@@ -222,10 +483,108 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaDoChat"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "A resposta do chat no formato da OpenAI."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Pedido recusado: `invalid_request`, `stream_nao_suportado`, `mensagens_grandes_demais` ou `schema_invalido`."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Token ausente, malformado ou errado (`invalid_api_key`).",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Sempre `Bearer`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Modelo fora da allowlist (`model_not_found`)."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Corpo acima de 64 KiB (`corpo_grande_demais`)."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Exceção que o gateway não previa (`erro_interno`)."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Falha do upstream ou saída recusada: `upstream_erro`, `upstream_resposta_invalida`, `saida_truncada` ou `saida_invalida`."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "`ocupado` (com `Retry-After`), `token_indisponivel` ou `upstream_indisponivel`.",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até tentar de novo. Só vem quando o `code` é `ocupado`.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "O Ollama não respondeu a tempo (`upstream_timeout`)."
           }
         },
         "security": [
@@ -244,13 +603,49 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Modelos V1 Models Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/ListaDeModelos"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Token ausente, malformado ou errado (`invalid_api_key`).",
+            "headers": {
+              "WWW-Authenticate": {
+                "description": "Sempre `Bearer`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "Exceção que o gateway não previa (`erro_interno`)."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpoDeErro"
+                }
+              }
+            },
+            "description": "O arquivo do token está indisponível (`token_indisponivel`)."
           }
         },
         "security": [

@@ -2,7 +2,7 @@
 
 Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Authorization: Bearer <token>`. Qualquer outro caminho responde 404 `not_found`, inclusive `/docs`, `/redoc` e `/openapi.json`. A barra final também: `/health/` e `/v1/models/` dão 404, sem redirecionamento e sem cabeçalho `Location`.
 
-O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara.
+O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory e traz as respostas de cada rota: o `200` do chat (`RespostaDoChat`), o corpo de erro (`CorpoDeErro`, com o enum de `code`), o `Retry-After` do 503 e o `WWW-Authenticate` do 401. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara. A versão do arquivo (`info.version`) é a do pacote. Um teste garante que o arquivo é exatamente o que a factory gera (`tests/test_openapi.py`).
 
 Os exemplos usam o token fictício `exemplo-nao-use-em-producao-0123456789`.
 
@@ -122,6 +122,18 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 | Caracteres somados | 8000 | 400 `mensagens_grandes_demais` |
 | `max_tokens` | 1024 | 400 `invalid_request` |
 | Pedidos ao mesmo tempo | `GATEWAY_CONCORRENCIA` | 503 `ocupado` com `Retry-After: 10` |
+
+## Versão e compatibilidade
+
+Enquanto a versão é `0.y`, sobe o minor para qualquer mudança de contrato, e o patch é seguro. Conta como contrato:
+
+- o OpenAPI (`docs/openapi.json`);
+- as tabelas de erros e de limites desta página;
+- uma validação mais estrita, como o subconjunto de JSON Schema;
+- um `code` novo num caminho que já existia (o consumidor de referência trata `code` fora da lista como `desconhecido`);
+- as variáveis `GATEWAY_*`, a porta 8000, o uid 10002 e a exigência de sistema de arquivos só leitura.
+
+A partir da 1.0, semver normal. A `info.version` do OpenAPI, a versão do `pyproject.toml` e a tag da release são o mesmo número (ADR 0011).
 
 ## Erros
 

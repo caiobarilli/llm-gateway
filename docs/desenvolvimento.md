@@ -79,7 +79,7 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs":/app/docs llm-gateway:
   /app/.venv/bin/python tools/exportar_openapi.py
 ```
 
-Rodar de novo não muda o arquivo. Mudou rota, modelo de entrada ou limite? Gere de novo e commite o arquivo junto.
+Rodar de novo não muda o arquivo. Mudou rota, modelo de entrada, limite ou `code`? Gere de novo e commite o arquivo junto: `tests/test_openapi.py` compara o arquivo com o que a factory gera, e o estágio `teste` copia só o `docs/openapi.json` para isso. Código de erro novo entra no enum `Codigo` (`src/llm_gateway/erros.py`), e o mypy recusa um código que não seja membro dele.
 
 ## Fluxo de branch e commit
 

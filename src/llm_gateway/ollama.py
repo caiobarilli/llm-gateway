@@ -3,7 +3,7 @@ from typing import Any
 import httpx2
 from pydantic import BaseModel, ValidationError
 
-from llm_gateway.erros import ErroOpenAI
+from llm_gateway.erros import Codigo, ErroOpenAI
 
 TEMPO_DE_CONEXAO = 5.0
 TEMPO_DE_LEITURA = 60.0
@@ -30,7 +30,7 @@ def criar_cliente(url: str, transporte: httpx2.AsyncBaseTransport | None = None)
     return httpx2.AsyncClient(base_url=url, timeout=tempo, transport=transporte, follow_redirects=False)
 
 
-def _upstream(status: int, codigo: str, mensagem: str) -> ErroOpenAI:
+def _upstream(status: int, codigo: Codigo, mensagem: str) -> ErroOpenAI:
     return ErroOpenAI(status, mensagem, "server_error", codigo)
 
 
@@ -38,14 +38,14 @@ async def conversar(cliente: httpx2.AsyncClient, corpo: dict[str, Any]) -> Respo
     try:
         resposta = await cliente.post("/api/chat", json=corpo)
     except httpx2.TimeoutException:
-        raise _upstream(504, "upstream_timeout", "O modelo não respondeu a tempo.") from None
+        raise _upstream(504, Codigo.UPSTREAM_TIMEOUT, "O modelo não respondeu a tempo.") from None
     except httpx2.RequestError:
-        raise _upstream(503, "upstream_indisponivel", "O modelo está indisponível.") from None
+        raise _upstream(503, Codigo.UPSTREAM_INDISPONIVEL, "O modelo está indisponível.") from None
 
     if resposta.status_code != 200:
-        raise _upstream(502, "upstream_erro", f"O modelo respondeu com erro {resposta.status_code}.")
+        raise _upstream(502, Codigo.UPSTREAM_ERRO, f"O modelo respondeu com erro {resposta.status_code}.")
 
     try:
         return RespostaOllama.model_validate_json(resposta.content)
     except ValidationError:
-        raise _upstream(502, "upstream_resposta_invalida", "O modelo respondeu num formato inesperado.") from None
+        raise _upstream(502, Codigo.UPSTREAM_RESPOSTA_INVALIDA, "O modelo respondeu num formato inesperado.") from None

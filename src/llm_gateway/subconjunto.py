@@ -1,6 +1,6 @@
 from typing import Any
 
-from llm_gateway.erros import ErroOpenAI
+from llm_gateway.erros import Codigo, ErroOpenAI
 
 PALAVRAS_PERMITIDAS = frozenset(
     {
@@ -33,7 +33,7 @@ def _fora_do_subconjunto() -> ErroOpenAI:
         400,
         "O JSON Schema do response_format usa uma palavra-chave fora do subconjunto aceito.",
         "invalid_request_error",
-        "schema_invalido",
+        Codigo.SCHEMA_INVALIDO,
     )
 
 
@@ -42,7 +42,7 @@ def _acima_dos_limites() -> ErroOpenAI:
         400,
         "O JSON Schema do response_format passa dos limites de tamanho do subconjunto aceito.",
         "invalid_request_error",
-        "schema_invalido",
+        Codigo.SCHEMA_INVALIDO,
     )
 
 

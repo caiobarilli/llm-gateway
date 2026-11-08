@@ -31,6 +31,7 @@ RUN uv sync --frozen --no-install-project
 COPY src ./src
 COPY tests ./tests
 COPY tools ./tools
+COPY docs/openapi.json ./docs/openapi.json
 
 RUN uv sync --frozen
 

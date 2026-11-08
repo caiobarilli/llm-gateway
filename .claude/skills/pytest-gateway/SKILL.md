@@ -29,6 +29,10 @@ a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
 - A linha de métricas daquele pedido (`caplog`, logger do módulo) com o
   conjunto exato de campos.
 
+- O contrato publicado: `tests/test_openapi.py` fixa `gerar() ==
+  docs/openapi.json`. Mexeu em rota, modelo, limite ou código? Regenere o
+  arquivo (`docs/desenvolvimento.md`) no mesmo commit.
+
 ## 3. Segredo e texto fora do log
 
 Essas provas já existem e não podem ser enfraquecidas:
