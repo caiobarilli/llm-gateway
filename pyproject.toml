@@ -36,10 +36,10 @@ ignore = ["N818"]
 [tool.mypy]
 strict = true
 python_version = "3.13"
-mypy_path = "src"
-files = ["src", "tests"]
+mypy_path = "src:tools"
+files = ["src", "tests", "tools"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "tools"]
 testpaths = ["tests"]
 addopts = "--strict-markers"

@@ -30,12 +30,14 @@ RUN uv sync --frozen --no-install-project
 
 COPY src ./src
 COPY tests ./tests
+COPY tools ./tools
 
 RUN uv sync --frozen
 
 RUN uv run --frozen --no-sync ruff check . \
     && uv run --frozen --no-sync ruff format --check . \
-    && uv run --frozen --no-sync mypy src tests \
+    && uv run --frozen --no-sync python tools/sem_comentario.py \
+    && uv run --frozen --no-sync mypy src tests tools \
     && uv run --frozen --no-sync pytest -q -p no:cacheprovider
 
 FROM base
