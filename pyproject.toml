@@ -1,0 +1,45 @@
+[build-system]
+requires = ["uv_build==0.13.7"]
+build-backend = "uv_build"
+
+[project]
+name = "llm-gateway"
+version = "0.1.0"
+requires-python = "==3.13.*"
+dependencies = [
+    "fastapi==0.162.0",
+    "httpx2==2.16.0",
+    "jsonschema==4.26.0",
+    "pydantic==2.14.3",
+    "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy==2.4.1",
+    "pytest==9.2.0",
+    "ruff==0.17.4",
+    "types-jsonschema==4.26.0.20261006",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF"]
+ignore = ["N818"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+mypy_path = "src"
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--strict-markers"
