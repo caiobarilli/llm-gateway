@@ -5,6 +5,8 @@ description: Revisão de segurança do llm-gateway no espírito do OWASP API Sec
 
 # Segurança da API do llm-gateway
 
+Itens marcados com `(alvo)` ainda não existem no repositório. Quem entregar o item remove a marca no mesmo commit.
+
 O gateway fica entre um app e um modelo que roda na máquina de alguém. O que
 ele protege: o token, a GPU (tempo e memória) e a máquina do Ollama, que nunca
 pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
@@ -19,7 +21,7 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 - Sem arquivo ou arquivo vazio: 503 `token_indisponivel` (fail-closed).
   Cabeçalho ausente, malformado ou token errado: 401 com `WWW-Authenticate: Bearer`,
   sempre a mesma mensagem, sem dizer qual foi o motivo.
-- O MCP usa o mesmo token e a mesma função. Não existe segundo segredo.
+- O MCP usa o mesmo token e a mesma função. Não existe segundo segredo. (alvo, exige ADR)
 
 ## 2. Autorização de função e de objeto (API1, API5)
 
@@ -28,7 +30,7 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 - A allowlist de modelos (`GATEWAY_MODELOS`) é a autorização: modelo fora dela
   nunca chega ao Ollama.
 - Nenhuma operação administrativa (baixar, apagar, listar o que existe no
-  Ollama) passa pelo gateway, nem pelo HTTP nem pelo MCP.
+  Ollama) passa pelo gateway, nem pelo HTTP nem pelo MCP (alvo, exige ADR).
 
 ## 3. Consumo de recursos (API4)
 
@@ -60,10 +62,11 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 
 - Rotas públicas: só `/health`. `/docs`, `/redoc` e `/openapi.json` desligados.
 - Sem `Server` no cabeçalho e sem access log do uvicorn.
-- Porta: o container não publica porta por padrão. Se publicar (para o MCP
-  no notebook), só em `127.0.0.1`.
-- Inventário (API9): toda rota e toda ferramenta MCP está listada em
-  `docs/api.md`. Rota que não está no doc é bug.
+- Porta: o container não publica porta por padrão. Se publicar, só em
+  `127.0.0.1`. O caso do MCP no notebook é (alvo, exige ADR).
+- Inventário (API9): toda rota está listada em `docs/api.md`. Rota que não
+  está no doc é bug. Ferramenta MCP, quando existir, entra na mesma lista
+  (alvo, exige ADR).
 
 ## 7. Logs
 
@@ -75,15 +78,15 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 
 - Imagens base por digest, usuário sem privilégio (10002), sem `pip` na imagem
   final, healthcheck.
-- Dependências com versão exata e `uv.lock`. Dependabot para `uv`, `docker` e
-  `github-actions`; actions fixadas por SHA.
-- CI: ruff com o conjunto `S` (bandit), Trivy da imagem e da config, SBOM,
-  `pip-audit` e CodeQL. Achado alto ou crítico bloqueia o merge.
+- Dependências com versão exata e `uv.lock`. Actions fixadas por SHA.
+- Dependabot para `uv`, `docker` e `github-actions`. (alvo)
+- CI: ruff com o conjunto `S` (bandit). Trivy da imagem e da config, SBOM,
+  `pip-audit` e CodeQL. (alvo) Achado alto ou crítico bloqueia o merge. (alvo)
 
 ## Roteiro de revisão de um PR
 
-1. O PR abre rota, ferramenta MCP ou cabeçalho novo? Está em `/v1`, com token e
-   listado em `docs/api.md`?
+1. O PR abre rota, ferramenta MCP (alvo, exige ADR) ou cabeçalho novo? Está em
+   `/v1`, com token e listado em `docs/api.md`?
 2. Algum campo de entrada sem limite ou sem `extra="forbid"`?
 3. Algum caminho chega ao Ollama sem passar pela allowlist e pelo `Limitador`?
 4. Alguma mensagem de erro ou linha de log carrega dado do pedido, da resposta

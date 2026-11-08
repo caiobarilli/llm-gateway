@@ -5,6 +5,8 @@ description: Padrões do FastAPI no llm-gateway — app criado pela factory cria
 
 # FastAPI no llm-gateway
 
+Itens marcados com `(alvo)` ainda não existem no repositório. Quem entregar o item remove a marca no mesmo commit.
+
 O gateway é um proxy pequeno e fechado entre um app e um modelo local. Cada
 regra abaixo existe para que ele continue pequeno e fechado.
 
@@ -80,7 +82,7 @@ regra abaixo existe para que ele continue pequeno e fechado.
   Há teste que prova isso; campo novo na linha precisa de teste também.
 - `--no-access-log` e `--no-server-header` no uvicorn continuam.
 
-## 8. MCP (FastMCP)
+## 8. MCP (FastMCP) (alvo, exige ADR)
 
 O servidor MCP é escrito à mão, não convertido da API
 (`FastMCP.from_fastapi` fica proibido: a própria documentação do FastMCP o

@@ -5,6 +5,8 @@ description: Como testar o llm-gateway com pytest — app pela factory com o Oll
 
 # pytest no llm-gateway
 
+Itens marcados com `(alvo)` ainda não existem no repositório. Quem entregar o item remove a marca no mesmo commit.
+
 Os testes provam o comportamento do gateway sem modelo, sem rede e sem token
 real. Se um teste precisa do Ollama de verdade, ele não é deste repositório:
 a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
@@ -49,19 +51,19 @@ Regras:
   até o teste liberar; nunca `sleep`.
 - A vaga precisa voltar depois de erro do upstream: teste o caso.
 
-## 5. Contrato com a OpenAI
+## 5. Contrato com a OpenAI (alvo)
 
 - Um teste usa o SDK oficial `openai` (dependência só de dev, versão exata)
   apontado para o app, e confere `chat.completions.create` e `models.list`.
   É a prova de que "compatível com a OpenAI" é verdade, não promessa.
 
-## 6. MCP
+## 6. MCP (alvo, exige ADR)
 
 - As ferramentas são testadas com o cliente em memória do FastMCP
   (`Client(mcp)`): sem token recusa, modelo fora da allowlist recusa,
   ocupado responde ocupado, e a linha de métricas sai sem texto.
 
-## 7. Cobertura
+## 7. Cobertura (alvo)
 
 - `pytest --cov=llm_gateway --cov-report=term-missing` no estágio `teste`.
 - O piso fica no `pyproject.toml` (`fail_under`). Ele só sobe.
