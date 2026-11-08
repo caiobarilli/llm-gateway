@@ -4,7 +4,7 @@ Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Aut
 
 O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara.
 
-Os exemplos usam o token fictício `exemplo-nao-use-em-producao`.
+Os exemplos usam o token fictício `exemplo-nao-use-em-producao-0123456789`.
 
 ## `GET /health`
 
@@ -22,7 +22,7 @@ curl http://127.0.0.1:8000/health
 - Resposta: `200` com a allowlist, na ordem de `GATEWAY_MODELOS`.
 
 ```bash
-curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:8000/v1/models
+curl -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" http://127.0.0.1:8000/v1/models
 ```
 
 ```json
@@ -81,7 +81,7 @@ O `finish_reason` é `stop` ou `length`. Sem `response_format`, a saída do mode
 
 ```bash
 curl http://127.0.0.1:8000/v1/chat/completions \
-  -H "Authorization: Bearer exemplo-nao-use-em-producao" \
+  -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "llama3.2:3b",
@@ -126,7 +126,7 @@ As mensagens são em português. O `code` é estável e é por ele que o consumi
 | `code` | Status | Quando acontece |
 |---|---|---|
 | `invalid_api_key` | 401 | Cabeçalho ausente, malformado ou token errado. A resposta leva `WWW-Authenticate: Bearer` e a mesma mensagem para os três casos. |
-| `token_indisponivel` | 503 | O arquivo do token está ausente, ilegível, vazio ou fora de ASCII. Nenhum token passa. |
+| `token_indisponivel` | 503 | O arquivo do token está ausente, ilegível, vazio, fora de ASCII ou com menos de 32 caracteres depois do `strip`. Nenhum token passa. |
 | `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 caminhos de campo do schema (`Pedido inválido em: messages.0.role.`). Campo desconhecido aparece só como o caminho até ele e `(campo não permitido)` (`Pedido inválido em: corpo (campo não permitido).`), sem o nome nem o valor que o cliente mandou. |
 | `stream_nao_suportado` | 400 | `stream: true`. |
 | `mensagens_grandes_demais` | 400 | A soma dos caracteres das mensagens passa de 8000. |

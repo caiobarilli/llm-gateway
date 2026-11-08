@@ -18,7 +18,8 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
   (`GATEWAY_TOKEN_ARQUIVO`). Nunca de variável de ambiente, nunca do repositório.
 - O arquivo é relido a cada pedido: trocar o token não exige reiniciar.
 - Comparação com `hmac.compare_digest`. Nunca `==`.
-- Sem arquivo ou arquivo vazio: 503 `token_indisponivel` (fail-closed).
+- Sem arquivo, arquivo vazio ou token com menos de 32 caracteres: 503
+  `token_indisponivel` (fail-closed). O token se gera com `openssl rand -hex 32`.
   Cabeçalho ausente, malformado ou token errado: 401 com `WWW-Authenticate: Bearer`,
   sempre a mesma mensagem, sem dizer qual foi o motivo.
 - O MCP usa o mesmo token e a mesma função. Não existe segundo segredo. (alvo, exige ADR)

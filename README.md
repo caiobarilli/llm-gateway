@@ -36,7 +36,7 @@ flowchart LR
 ```bash
 docker build -t llm-gateway .
 
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO" && chmod 644 "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO" && chmod 644 "$TOKEN_ARQUIVO"
 
 docker run --rm -p 127.0.0.1:8000:8000 \
   --add-host=host.docker.internal:host-gateway \
@@ -50,7 +50,7 @@ docker run --rm -p 127.0.0.1:8000:8000 \
 
 ```bash
 curl http://127.0.0.1:8000/health
-curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:8000/v1/models
+curl -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" http://127.0.0.1:8000/v1/models
 ```
 
 ### uv
@@ -58,7 +58,7 @@ curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:800
 ```bash
 uv sync --frozen --no-dev
 
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO"
 
 GATEWAY_TOKEN_ARQUIVO="$TOKEN_ARQUIVO" GATEWAY_MODELOS=llama3.2:3b GATEWAY_CONCORRENCIA=1 \
 GATEWAY_OLLAMA_URL=http://127.0.0.1:11434 \

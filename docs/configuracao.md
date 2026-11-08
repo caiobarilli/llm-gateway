@@ -15,7 +15,7 @@ A `Config` é montada dentro do `criar_app`. Variável faltando ou inválida lev
 
 ## Detalhes por variável
 
-**`GATEWAY_TOKEN_ARQUIVO`.** O gateway não confere se o arquivo existe ao subir. Ele o lê a cada pedido: arquivo ausente, ilegível, vazio ou fora de ASCII dá 503 `token_indisponivel` (`docs/api.md`). O arquivo precisa ser legível pelo usuário do container (uid 10002). O token nunca vem de variável de ambiente.
+**`GATEWAY_TOKEN_ARQUIVO`.** O gateway não confere se o arquivo existe ao subir. Ele o lê a cada pedido: arquivo ausente, ilegível, vazio, fora de ASCII ou com menos de 32 caracteres (depois do `strip`) dá 503 `token_indisponivel` (`docs/api.md`). Gere o token com `openssl rand -hex 32` (64 caracteres). O arquivo precisa ser legível pelo usuário do container (uid 10002). O token nunca vem de variável de ambiente.
 
 **`GATEWAY_MODELOS`.** É a allowlist. A comparação é exata, com maiúsculas e minúsculas. A ordem da variável é a ordem do `GET /v1/models`. Modelo fora da lista dá 404 `model_not_found` e nunca chega ao Ollama.
 

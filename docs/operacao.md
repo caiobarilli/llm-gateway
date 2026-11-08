@@ -50,7 +50,7 @@ Sem campos extras e sem valor do cabeçalho:
 {"nivel": "info", "evento": "autenticação recusada: token errado"}
 ```
 
-Os motivos são `sem cabeçalho`, `cabeçalho malformado` e `token errado`. Quando o arquivo do token falha, o evento sai em `warning`: `token indisponível: <tipo do erro>` ou `token indisponível: arquivo vazio`.
+Os motivos são `sem cabeçalho`, `cabeçalho malformado` e `token errado`. Quando o arquivo do token falha, o evento sai em `warning`: `token indisponível: <tipo do erro>`, `token indisponível: arquivo vazio` ou `token indisponível: token curto`.
 
 ## 503 ocupado
 
@@ -67,7 +67,7 @@ O consumidor precisa esperar mais que isso. O `GeradorGateway` do PHParrot usa 9
 
 ## O que o container espera de quem o roda
 
-- **Token:** um arquivo legível pelo uid 10002, montado só leitura, e `GATEWAY_TOKEN_ARQUIVO` apontando para o caminho dentro do container. Para trocar o token, reescreva o arquivo no lugar. Trocar o inode de um arquivo montado sozinho (`mv`, editor) pode deixar o container com o valor antigo (ADR 0013 do PHParrot; não testado aqui).
+- **Token:** um arquivo legível pelo uid 10002, montado só leitura, com pelo menos 32 caracteres (`openssl rand -hex 32` gera 64), e `GATEWAY_TOKEN_ARQUIVO` apontando para o caminho dentro do container. Para trocar o token, reescreva o arquivo no lugar. Trocar o inode de um arquivo montado sozinho (`mv`, editor) pode deixar o container com o valor antigo (ADR 0013 do PHParrot; não testado aqui).
 - **Variáveis:** as quatro de `docs/configuracao.md`. Sem elas o container sai ao subir.
 - **Porta:** o `EXPOSE 8000` não publica nada. Sem `-p`, a porta fica só na rede do container. Se publicar, só no loopback: `-p 127.0.0.1:8000:8000`.
 - **Memória:** em repouso, sem pedidos, o container mediu cerca de 40 MiB com `docker stats`. Sob carga, não testado. Defina um limite (`--memory`).
@@ -95,7 +95,7 @@ docker run -d --name llm-gateway \
 | Sintoma | Causa provável |
 |---|---|
 | O container sai ao subir | Variável `GATEWAY_*` ausente ou inválida. O erro cita o nome da variável. |
-| 503 `token_indisponivel` | O arquivo do token não existe no container, está vazio, não é ASCII ou o uid 10002 não consegue lê-lo. |
+| 503 `token_indisponivel` | O arquivo do token não existe no container, está vazio, não é ASCII, tem menos de 32 caracteres ou o uid 10002 não consegue lê-lo. O motivo está no log (`token indisponível: ...`). |
 | 503 `upstream_indisponivel` | O Ollama está fora do ar ou o endereço em `GATEWAY_OLLAMA_URL` não é alcançado de dentro do container. |
 | 504 `upstream_timeout` | O Ollama não respondeu em 60 s, por exemplo com o modelo frio e a máquina ocupada. |
 | 503 `ocupado` | Já há pedido em andamento. Espere o `Retry-After`. |

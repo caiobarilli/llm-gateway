@@ -16,7 +16,7 @@ uv run mypy
 Subir o servidor local, com um token fictício:
 
 ```bash
-TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao' > "$TOKEN_ARQUIVO"
+TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO"
 GATEWAY_TOKEN_ARQUIVO="$TOKEN_ARQUIVO" GATEWAY_MODELOS=llama3.2:3b GATEWAY_CONCORRENCIA=1 \
 GATEWAY_OLLAMA_URL=http://127.0.0.1:11434 \
 uv run uvicorn --factory llm_gateway.app:criar_app --host 127.0.0.1 --port 8000

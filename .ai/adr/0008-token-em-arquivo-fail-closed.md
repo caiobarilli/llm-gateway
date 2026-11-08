@@ -8,7 +8,8 @@ O token autoriza o uso da GPU de alguém. Variável de ambiente aparece em `dock
 
 - O token vem de um arquivo (`GATEWAY_TOKEN_ARQUIVO`), montado só leitura pelo consumidor. O arquivo é relido a cada pedido.
 - A leitura é em bytes, decodificada como ASCII, com `strip()`.
-- Arquivo ausente, ilegível, vazio ou fora de ASCII dá 503 `token_indisponivel`. Nem o token certo passa nesse caso.
+- Arquivo ausente, ilegível, vazio, fora de ASCII ou com menos de 32 caracteres (depois do `strip`) dá 503 `token_indisponivel`. Nem o token certo passa nesse caso. O motivo `token curto` vai para o log, sem o valor.
+- Sem limite de tentativas: com 32 caracteres ou mais, adivinhar o token não é um risco real, e o `openssl rand -hex 32` gera 64.
 - Cabeçalho ausente, malformado ou token errado dá 401 `invalid_api_key`, com `WWW-Authenticate: Bearer` e a mesma mensagem para todo motivo.
 - A comparação é `hmac.compare_digest`, nunca `==`.
 - A autenticação é dependência do router `/v1`. A única rota fora dele é `/health`, que fica pública por causa do `HEALTHCHECK` da imagem.
@@ -22,6 +23,6 @@ O token autoriza o uso da GPU de alguém. Variável de ambiente aparece em `dock
 
 ## Evidência
 
-- `src/llm_gateway/autenticacao.py:14-25` (`ler_token`), `:38-46` (`extrair_bearer`), `:49-51` (`compare_digest`) e `:54-57` (`exigir_token`).
+- `src/llm_gateway/autenticacao.py:15-30` (`ler_token`, com `TAMANHO_MINIMO_DO_TOKEN` na `:12`), `:43-51` (`extrair_bearer`), `:54-56` (`compare_digest`) e `:59-62` (`exigir_token`).
 - `src/llm_gateway/app.py:16` (a dependência no router) e `:44-46` (`/health`).
-- `tests/test_autenticacao.py:50` (rotação sem reiniciar), `:69`, `:75`, `:81` e `:88` (os quatro casos de 503) e `:94` (sem token no servidor, o token certo não passa).
+- `tests/test_autenticacao.py:50` (rotação sem reiniciar), `:69`, `:75`, `:81` e `:88` (os quatro casos de 503), `:94` (sem token no servidor, o token certo não passa) e `:102`, `:110` e `:116` (31 caracteres dá 503, 32 passa, o motivo sai no log sem o token).

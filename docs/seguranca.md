@@ -37,8 +37,9 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 
 - Um token Bearer, lido de um arquivo. O arquivo é relido a cada pedido, então trocar o token vale sem reiniciar.
 - Comparação com `hmac.compare_digest`, em bytes.
-- Sem arquivo, arquivo vazio, ilegível ou fora de ASCII: 503 `token_indisponivel`. Cabeçalho ausente, malformado ou token errado: 401 com `WWW-Authenticate: Bearer`, sempre a mesma mensagem.
-- Código: `src/llm_gateway/autenticacao.py:14-57`. Provas: `tests/test_autenticacao.py`.
+- Sem arquivo, arquivo vazio, ilegível, fora de ASCII ou com menos de 32 caracteres depois do `strip`: 503 `token_indisponivel`. Cabeçalho ausente, malformado ou token errado: 401 com `WWW-Authenticate: Bearer`, sempre a mesma mensagem.
+- O motivo `token curto` vai para o log, sem o token. Gere o token com `openssl rand -hex 32` (64 caracteres). Não há limite de tentativas: com 32 caracteres ou mais, adivinhar não é um risco real.
+- Código: `src/llm_gateway/autenticacao.py:15-62`. Provas: `tests/test_autenticacao.py`.
 
 ## Allowlist
 
@@ -58,7 +59,7 @@ O gateway não interpreta nem executa o que o modelo devolve.
 
 ## Logs
 
-Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 0004). Nunca entram token, cabeçalho `Authorization`, prompt, mensagens, resposta nem schema. Os testes `tests/test_chat.py:354` e `tests/test_autenticacao.py:101` provam isso com valores marcados e com o log em `DEBUG`.
+Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 0004). Nunca entram token, cabeçalho `Authorization`, prompt, mensagens, resposta nem schema. Os testes `tests/test_chat.py:354` e `tests/test_autenticacao.py:131` provam isso com valores marcados e com o log em `DEBUG`.
 
 ## Imagem
 

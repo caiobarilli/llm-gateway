@@ -9,6 +9,7 @@ from llm_gateway.erros import ErroOpenAI
 registro = logging.getLogger(__name__)
 
 DESAFIO = {"WWW-Authenticate": "Bearer"}
+TAMANHO_MINIMO_DO_TOKEN = 32
 
 
 def ler_token(arquivo: Path) -> str:
@@ -20,6 +21,10 @@ def ler_token(arquivo: Path) -> str:
 
     if token == "":
         registro.warning("token indisponível: arquivo vazio")
+        raise _token_indisponivel()
+
+    if len(token) < TAMANHO_MINIMO_DO_TOKEN:
+        registro.warning("token indisponível: token curto")
         raise _token_indisponivel()
 
     return token
