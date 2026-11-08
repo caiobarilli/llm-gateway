@@ -20,6 +20,8 @@ a prova de ponta a ponta mora no consumidor (o grupo `ollama` do PHParrot).
 - `app` e `cliente`: `criar_app(config, httpx2.MockTransport(ollama))` dentro
   de um `TestClient`. Nunca suba uvicorn nem abra porta.
 - Reaproveite as fixtures. Fixture nova só quando duas ou mais suítes precisam.
+- `filterwarnings = ["error"]` no `pyproject.toml`: aviso vira falha de teste.
+  Um aviso de dependência se resolve na causa, não com `ignore` genérico.
 
 ## 2. O que todo comportamento novo precisa provar
 

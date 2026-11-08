@@ -39,14 +39,21 @@ projeto não roda.
   nunca vazando para o resto do código sem validação.
 - Dados imutáveis de configuração: `@dataclass(frozen=True, slots=True)`,
   como o `Config`.
+- O mypy roda com `warn_unreachable` e o código de erro `explicit-override`:
+  subclasse que sobrescreve método sem `@override` falha o gate.
 - `# type: ignore` só com o código do erro (`# type: ignore[arg-type]`) e só
   se não houver tipo correto possível. Revisor recusa ignore genérico.
 
 ## 4. Estilo: PEP 8 pelo ruff
 
-- O ruff é lint e formatador. Regras ativas: `E, F, W, I, B, UP, S, N, SIM, RUF, PT`
+- O ruff é lint e formatador. Regras ativas: `E, F, W, I, B, UP, S, N, SIM, RUF, PT, ASYNC`
   (`S` é o conjunto do bandit, de segurança; `PT` é o do pytest, que pega
-  `pytest.raises` largo demais). `S101` só é liberado em `tests/`.
+  `pytest.raises` largo demais; `ASYNC` pega uma lista fixa de chamadas
+  bloqueantes dentro de `async def`, como `time.sleep` e `open`). `S101` só é
+  liberado em `tests/`.
+- `ASYNC` não é um detector de chamada bloqueante: não vê o `sys.stdout.write`
+  e o `flush` de `registro.py`, que rodam dentro da rota assíncrona (custam
+  cerca de 9 µs, e não vale mexer).
 - Linha de 120: desvio consciente do PEP 8 (79), registrado em ADR. Não
   reformate o projeto para 79 nem 88.
 - `ruff format --check` e `ruff check` passam antes de qualquer commit.
@@ -64,7 +71,8 @@ projeto não roda.
 ## 6. Recursos da 3.13 que valem aqui
 
 - `typing.override` em subclasses (`FormatoJson.format`, `SaidaPadrao.emit`)
-  deixa o mypy pegar assinatura que deixou de bater.
+  deixa o mypy pegar assinatura que deixou de bater, e o `explicit-override`
+  torna a marca obrigatória.
 - `TaskGroup` e `asyncio.timeout` se um dia houver mais de uma chamada
   concorrente ao upstream. Hoje não há: a concorrência é 1 por decisão.
 - Não use recurso só porque existe. Se não deixa o código mais curto ou mais

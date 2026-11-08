@@ -35,8 +35,8 @@ Ele roda, nesta ordem, e para no primeiro que falhar:
 1. `ruff check .`
 2. `ruff format --check .`
 3. `python tools/sem_comentario.py`
-4. `mypy src tests tools` (modo `strict`)
-5. `pytest`, com cobertura de linhas e ramos (`--cov=llm_gateway`). O piso é o `fail_under` do `pyproject.toml` (hoje 98, o medido arredondado para baixo). Ele só sobe: cobertura abaixo do piso reprova o gate.
+4. `mypy src tests tools` (modo `strict`, com `warn_unreachable` e `explicit-override`)
+5. `pytest` (com `filterwarnings = ["error"]`: aviso falha o teste), com cobertura de linhas e ramos (`--cov=llm_gateway`). O piso é o `fail_under` do `pyproject.toml` (hoje 98, o medido arredondado para baixo). Ele só sobe: cobertura abaixo do piso reprova o gate.
 
 O `ci.yml` roda a trava de comentários e depois o mesmo build, em push e em pull request para o `main`. Nenhum teste acessa a rede nem o Ollama de verdade: o upstream é um `httpx2.MockTransport` (`tests/conftest.py`).
 

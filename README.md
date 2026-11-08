@@ -91,9 +91,9 @@ O modelo de ameaças e o mapa para o OWASP API Top 10 estão em [docs/seguranca.
 
 O gate é `docker build --target teste .`. Ele roda:
 
-- `ruff`: PEP 8 com linha de 120 (desvio registrado no [ADR 0006](.ai/adr/0006-linha-de-120-desvio-do-pep-8.md)), mais o conjunto `S` de segurança e o `PT` do pytest;
-- `mypy --strict`;
-- `pytest`, com o Ollama simulado, sem acesso à rede e com piso de cobertura (linhas e ramos);
+- `ruff`: PEP 8 com linha de 120 (desvio registrado no [ADR 0006](.ai/adr/0006-linha-de-120-desvio-do-pep-8.md)), mais o conjunto `S` de segurança, o `PT` do pytest e o `ASYNC`;
+- `mypy --strict`, com `warn_unreachable` e `explicit-override`;
+- `pytest`, com o Ollama simulado, sem acesso à rede, aviso como erro e piso de cobertura (linhas e ramos);
 - a trava de comentários: só `# type:` e `# noqa` passam.
 
 Dependências com versão exata e `uv.lock`. Imagens base fixadas por digest. O CI roda a trava e o gate em push e em pull request para o `main`.
