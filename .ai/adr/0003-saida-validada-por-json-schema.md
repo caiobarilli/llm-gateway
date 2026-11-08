@@ -6,7 +6,8 @@ O Ollama aceita `format` com JSON Schema, mas um modelo de 3B pode devolver text
 
 ## Decisão
 
-- O schema do `response_format` é validado como schema (`Draft202012Validator.check_schema`, JSON Schema Draft 2020-12). Schema inválido dá 400 `schema_invalido`, antes de chegar ao Ollama.
+- O schema do `response_format` é um subconjunto de JSON Schema, com uma lista de palavras-chave e tetos (ADR 0009). Fora dele, 400 `schema_invalido`.
+- O schema é validado como schema (`Draft202012Validator.check_schema`, JSON Schema Draft 2020-12). Schema inválido dá 400 `schema_invalido`, antes de chegar ao Ollama.
 - O mesmo schema vai ao `format` do Ollama e valida a resposta.
 - Resposta que não é JSON ou não segue o schema dá 502 `saida_invalida`. Resposta cortada pelo `max_tokens` dá 502 `saida_truncada`.
 - Nenhum desses erros devolve o conteúdo do modelo.
@@ -18,8 +19,9 @@ O Ollama aceita `format` com JSON Schema, mas um modelo de 3B pode devolver text
 - O consumidor recebe JSON que segue o schema que ele mandou, ou um erro com `code` estável.
 - O gateway não conhece o formato dos dados do consumidor. Validar o conteúdo continua sendo papel dele.
 - Os campos `description` e `strict` do schema são aceitos e não são repassados ao Ollama.
+- O schema inteiro vai para o `format` do Ollama. A lista de palavras-chave é, portanto, contrato com o consumidor (`docs/api.md`, ADR 0009).
 
 ## Evidência
 
-- `src/llm_gateway/chat.py:102-112` (`preparar_validador`) e `:132-145` (`conferir_saida`).
+- `src/llm_gateway/chat.py:112-123` (`preparar_validador`) e `:143-156` (`conferir_saida`). `src/llm_gateway/subconjunto.py` (a lista).
 - `tests/test_chat.py:202` (schema inválido responde 400) e `:225` (saída fora do schema vira 502 sem o conteúdo).

@@ -47,8 +47,10 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 
 - `extra="forbid"` em todo modelo de entrada: campo desconhecido é recusado,
   não ignorado.
-- O schema pedido pelo cliente é validado como schema antes do uso
-  (`SchemaError` vira 400).
+- O schema pedido pelo cliente é executado pelo gateway. Ele só passa se
+  usar as palavras-chave da lista (`subconjunto.py`, ADR 0009) e ficar nos
+  tetos de nós, profundidade e números; depois é validado como schema
+  (`SchemaError` vira 400). `$ref` nunca é resolvido.
 
 ## 5. Saída do modelo (API10: consumo inseguro de API)
 

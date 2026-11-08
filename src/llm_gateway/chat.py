@@ -18,6 +18,7 @@ from llm_gateway.erros import ErroOpenAI
 from llm_gateway.modelos import LIMITE_DO_NOME, exigir_modelo_permitido
 from llm_gateway.ollama import CONTEXTO, RespostaOllama, conversar
 from llm_gateway.registro import registrar_metricas
+from llm_gateway.subconjunto import exigir_subconjunto
 
 registro = logging.getLogger(__name__)
 
@@ -113,6 +114,7 @@ def preparar_validador(pedido: Pedido) -> Draft202012Validator | None:
         return None
 
     esquema = pedido.response_format.json_schema.esquema
+    exigir_subconjunto(esquema)
     try:
         Draft202012Validator.check_schema(esquema)
     except SchemaError:

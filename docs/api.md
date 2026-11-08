@@ -47,7 +47,7 @@ O `created` é sempre 0 e o `owned_by` é sempre `llm-gateway`.
 | `messages[].content` | string | Até 8000 caracteres. A soma de todas as mensagens também fica em 8000. |
 | `response_format` | objeto | Opcional. `type` só pode ser `json_schema`. |
 | `response_format.json_schema.name` | string | De 1 a 64 caracteres, `[A-Za-z0-9_-]`. |
-| `response_format.json_schema.schema` | objeto | JSON Schema Draft 2020-12, validado como schema. |
+| `response_format.json_schema.schema` | objeto | Subconjunto de JSON Schema Draft 2020-12, validado como schema. Veja a lista abaixo. |
 | `response_format.json_schema.description` | string | Opcional, até 512 caracteres. Não é repassada ao Ollama. |
 | `response_format.json_schema.strict` | booleano | Opcional. Não é repassado ao Ollama. |
 | `temperature` | número | Opcional, de 0 a 2. |
@@ -55,6 +55,16 @@ O `created` é sempre 0 e o `owned_by` é sempre `llm-gateway`.
 | `stream` | booleano | Opcional. `true` é recusado. |
 
 Campo fora desta tabela é recusado com 400, não ignorado. O contexto (`num_ctx`) é fixo em 4096 e não vem do pedido.
+
+### O subconjunto de JSON Schema
+
+O schema vai inteiro para o Ollama (`format`) e valida a saída do modelo. Por isso o gateway aceita só estas palavras-chave: `type`, `properties`, `required`, `additionalProperties`, `items`, `enum`, `const`, `minLength`, `maxLength`, `minItems`, `maxItems`, `minimum`, `maximum`, `title` e `description`. A lista também está no OpenAPI, em `x-palavras-chave`.
+
+- Qualquer outra chave dá 400 `schema_invalido`: as que começam com `$` (`$ref`, `$defs`, `$schema`, `$id`), `pattern`, `patternProperties`, `format`, os combinadores (`allOf`, `anyOf`, `oneOf`, `not`, `if`), `default`, `examples`. A mensagem não cita a palavra.
+- Nomes de campo dentro de `properties`, valores de `enum` e de `const` e itens de `required` são dado: uma propriedade chamada `pattern` vale.
+- Tetos: 64 nós de schema, profundidade 6 (a raiz é o nível 1), inteiros de 0 a 4096 em `minLength`, `maxLength`, `minItems` e `maxItems`, e até 64 itens em `enum`. Passar de um teto também dá 400 `schema_invalido`.
+- O gateway nunca busca um `$ref`, local ou remoto. O `parse()` do SDK `openai` com modelos Pydantic aninhados gera `$defs` e `$ref`, e por isso dá 400 `schema_invalido`. O mesmo vale para campo com valor padrão (`default`). Modelo plano passa.
+- Mudar a lista é mudança de contrato (ADR 0009).
 
 ### Resposta 200
 
@@ -130,7 +140,7 @@ As mensagens são em português. O `code` é estável e é por ele que o consumi
 | `invalid_request` | 400 | Corpo que não é JSON, campo desconhecido, campo fora do limite ou de tipo errado. A mensagem lista até 5 caminhos de campo do schema (`Pedido inválido em: messages.0.role.`). Campo desconhecido aparece só como o caminho até ele e `(campo não permitido)` (`Pedido inválido em: corpo (campo não permitido).`), sem o nome nem o valor que o cliente mandou. |
 | `stream_nao_suportado` | 400 | `stream: true`. |
 | `mensagens_grandes_demais` | 400 | A soma dos caracteres das mensagens passa de 8000. |
-| `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido. |
+| `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido, usa palavra-chave fora do subconjunto ou passa de um teto. |
 | `corpo_grande_demais` | 413 | O corpo passa de 64 KiB. |
 | `model_not_found` | 404 | O modelo não está na allowlist. A mensagem cita o nome, que tem até 100 caracteres. |
 | `not_found` | 404 | Rota inexistente. |
@@ -148,4 +158,4 @@ Nenhum erro devolve o texto do pedido, o texto do modelo ou o corpo do upstream.
 
 ### Ordem das recusas
 
-Na ordem em que o código confere: token, tamanho do corpo, formato do pedido, modelo, schema, vaga, upstream, saída. Um pedido com campo desconhecido e modelo fora da lista recebe 400, não 404.
+Na ordem em que o código confere: token, tamanho do corpo, formato do pedido, modelo, schema (subconjunto e validade), vaga, upstream, saída. Um pedido com campo desconhecido e modelo fora da lista recebe 400, não 404.

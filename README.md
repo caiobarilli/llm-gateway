@@ -25,7 +25,7 @@ flowchart LR
 - Token Bearer lido de um arquivo, relido a cada pedido, comparado em tempo constante. Sem token configurado, nada passa.
 - Allowlist de modelos: o que não está na lista nunca chega ao Ollama.
 - Um pedido por vez, sem fila: ocupado responde 503 com `Retry-After`.
-- Saída validada por JSON Schema (Draft 2020-12). Saída inválida ou cortada vira erro 502, sem o texto.
+- Saída validada por um subconjunto de JSON Schema (Draft 2020-12): sem `$ref`, `pattern` nem combinadores. Saída inválida ou cortada vira erro 502, sem o texto.
 - Uma linha de métricas por pedido, sem prompt, resposta, schema nem token.
 - Imagem endurecida: bases por digest, usuário 10002, sem `pip`, e sobe com o sistema de arquivos só leitura.
 
@@ -82,7 +82,7 @@ Erros saem no formato da OpenAI, com um `code` estável. Corpo, limites, tabela 
 - Rotas fechadas por token: só o `/health` é pública.
 - Corpo de até 64 KiB, 8 mensagens, 8000 caracteres, `max_tokens` até 1024 e campos desconhecidos recusados.
 - `/docs`, `/redoc` e `/openapi.json` ficam desligados em runtime.
-- O gateway só chama `POST /api/chat` no endereço configurado. Nenhum campo do pedido escolhe o destino.
+- O gateway só chama `POST /api/chat` no endereço configurado. O schema do pedido é um subconjunto de JSON Schema: `$ref` é recusado, então nada no pedido faz o gateway buscar uma URL.
 - A porta não é publicada por padrão. Se for, só em `127.0.0.1`.
 
 O modelo de ameaças e o mapa para o OWASP API Top 10 estão em [docs/seguranca.md](docs/seguranca.md).

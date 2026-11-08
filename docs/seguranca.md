@@ -12,6 +12,7 @@
 |---|---|---|
 | Quem alcança a porta sem token | Usar o modelo ou ver o que existe | 401 em toda rota de `/v1`. Só o `/health` é pública. |
 | Quem tem o token | Gastar a GPU, pedir modelo que não é seu, mandar corpo enorme | Allowlist, limites de entrada, `Limitador` e tempos limite. |
+| Quem tem o token | Mandar um schema que faz o gateway buscar uma URL ou gastar CPU | Subconjunto de palavras-chave e tetos de tamanho (ADR 0009). |
 | O modelo | Devolver saída fora do formato ou cortada | Validação por JSON Schema e erro 502, sem repassar o texto. |
 | O Ollama ou a rede até ele | Responder lixo, demorar ou cair | Pydantic na resposta, tempos limite e erro próprio, sem repassar o corpo. |
 | A cadeia de dependências | Trazer código alterado | Versões exatas, `uv.lock` com hashes, imagens e actions fixadas. |
@@ -28,7 +29,7 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 | **API4** Consumo irrestrito de recursos | Corpo de 64 KiB, 8 mensagens, 8000 caracteres, `max_tokens` até 1024, `num_ctx` fixo, um pedido por vez sem fila (ADR 0002) e tempos limite de 5 s e 60 s. |
 | **API5** Autorização de função quebrada | Não existe função administrativa. Baixar, apagar e listar modelos do Ollama não passam pelo gateway. |
 | **API6** Acesso irrestrito a fluxos sensíveis | O fluxo caro é a geração. Ela passa por token, allowlist e `Limitador`. |
-| **API7** SSRF | O destino do upstream vem de `GATEWAY_OLLAMA_URL`. Nenhum campo do pedido escolhe URL, e redirecionamentos não são seguidos. |
+| **API7** SSRF | O destino do upstream vem de `GATEWAY_OLLAMA_URL`, e redirecionamentos não são seguidos. O único campo do pedido que poderia escolher uma URL era o `$ref` do schema, e o subconjunto de palavras-chave o recusa (ADR 0009). |
 | **API8** Configuração incorreta de segurança | `/docs`, `/redoc` e `/openapi.json` desligados, barra final sem redirecionamento (`redirect_slashes=False`), sem cabeçalho `Server`, sem access log, configuração inválida impede a subida, usuário sem privilégio na imagem. |
 | **API9** Gestão incorreta do inventário | Toda rota está em `docs/api.md` e em `docs/openapi.json`. Rota nova fora de `/v1` exige ADR (`.ai/regras.md`). |
 | **API10** Consumo inseguro de APIs | O Ollama é um upstream como outro qualquer: a resposta é validada e o texto dele nunca é repassado (seção abaixo). |
@@ -48,6 +49,10 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 ## Limites
 
 Os valores estão em `docs/api.md` e `docs/configuracao.md`. O corpo é lido com teto: o `Content-Length` declarado é conferido antes, e o que chega é contado. A mensagem do 400 cita só caminhos do schema (até 5, com até 40 caracteres cada). Campo desconhecido aparece como o caminho até ele mais `(campo não permitido)`: nem o valor nem o nome que o cliente inventou voltam na resposta.
+
+## O schema do cliente
+
+O schema do `response_format` é executado pelo gateway: valida a saída e vai inteiro para o Ollama. Ele é um subconjunto de JSON Schema, com lista fixa de palavras-chave e tetos de nós, profundidade e tamanho (`docs/api.md`, ADR 0009). `$ref` (local ou remoto), `pattern`, `format` e os combinadores são recusados com 400 `schema_invalido` antes de qualquer execução, o que fecha a busca remota do `jsonschema` e a expressão regular com custo exponencial. Código: `src/llm_gateway/subconjunto.py`. Provas: `tests/test_subconjunto.py`.
 
 ## A saída é dado não confiável
 

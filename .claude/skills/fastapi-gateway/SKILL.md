@@ -46,6 +46,9 @@ regra abaixo existe para que ele continue pequeno e fechado.
   chegar ao Ollama. O nome tem até 100 caracteres (`LIMITE_DO_NOME`, 400
   acima disso). Fora da allowlist: 404 `model_not_found`.
 - `stream: true` não é suportado: recusa clara, não meia implementação.
+- O schema do `response_format` passa por `exigir_subconjunto` antes do
+  `check_schema`. Palavra-chave nova na lista é decisão de contrato, com teste
+  (ADR 0009).
 
 ## 4. Erros no formato da OpenAI
 
