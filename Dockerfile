@@ -16,24 +16,24 @@ FROM base AS dependencias
 COPY --from=uv /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 FROM dependencias AS construcao
 
 COPY src ./src
 
-RUN uv sync --frozen --no-dev --no-editable
+RUN uv sync --locked --no-dev --no-editable
 
 FROM dependencias AS teste
 
-RUN uv sync --frozen --no-install-project
+RUN uv sync --locked --no-install-project
 
 COPY src ./src
 COPY tests ./tests
 COPY tools ./tools
 COPY docs/openapi.json ./docs/openapi.json
 
-RUN uv sync --frozen
+RUN uv sync --locked
 
 RUN uv run --frozen --no-sync ruff check . \
     && uv run --frozen --no-sync ruff format --check . \
@@ -43,11 +43,20 @@ RUN uv run --frozen --no-sync ruff check . \
 
 FROM base
 
+LABEL org.opencontainers.image.source=https://github.com/caiobarilli/llm-gateway
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends --only-upgrade zlib1g \
+    && rm -rf /var/lib/apt/lists/* \
+    && dpkg-query --show --showformat='zlib1g ${Version}\n' zlib1g \
+    && dpkg --compare-versions "$(dpkg-query --show --showformat='${Version}' zlib1g)" ge '1:1.3.dfsg+really1.3.1-1+deb13u1'
+
 RUN python -m pip uninstall --yes --no-input pip \
     && groupadd --system --gid 10002 gateway \
     && useradd --system --uid 10002 --gid 10002 --no-create-home --shell /usr/sbin/nologin gateway
 
 COPY --from=construcao /app/.venv /app/.venv
+COPY docs/openapi.json /app/openapi.json
 
 ENV PATH=/app/.venv/bin:$PATH
 

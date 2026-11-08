@@ -27,4 +27,4 @@ O consumidor monta as respostas do gateway à mão nos testes dele. Medido na S5
 
 - `src/llm_gateway/erros.py:13-31` (`Codigo`), `:34-42` (`DetalheDoErro` e `CorpoDeErro`). `src/llm_gateway/contrato.py:16-30` (as respostas comuns). `src/llm_gateway/chat.py:58-65` (`RespostaDoChat`) e `:67-86` (`RESPOSTAS_DO_CHAT`). `src/llm_gateway/app.py:20` e `:47` (o router e a versão).
 - `tests/test_openapi.py:20` (o arquivo publicado é o que a factory gera) e as demais asserções do arquivo.
-- `Dockerfile:34` (`COPY docs/openapi.json`).
+- `Dockerfile:34` (`COPY docs/openapi.json` no estágio `teste`) e `:59` (o arquivo em `/app/openapi.json` na imagem final).

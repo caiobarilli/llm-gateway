@@ -69,15 +69,19 @@ Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 
 ## Imagem
 
 - Imagens base fixadas por tag e digest (`Dockerfile:1` e `:3`).
+- O `zlib1g` da base é atualizado no estágio final (`apt-get install --only-upgrade zlib1g`), porque a base fixada traz a versão com os CVE-2026-76844 e CVE-2026-85091 (DSA-6613-1 do Debian). O build confere a versão com o `dpkg`, e a linha sai quando a base trouxer a correção (`.ai/pitfalls.md`).
+- A imagem declara a origem (`org.opencontainers.image.source`) e carrega o `openapi.json` em `/app/openapi.json`.
 - Estágios separados: o pacote é instalado não editável e a imagem final leva só o `.venv`, sem `src/` (ADR 0007).
-- Usuário 10002, sem `pip` na imagem final, `HEALTHCHECK` em `/health` (`Dockerfile:45-58`).
+- Usuário 10002, sem `pip` na imagem final, `HEALTHCHECK` em `/health` (`Dockerfile:54-68`).
 - Sobe com o sistema de arquivos só leitura e `/tmp` em tmpfs (`docs/operacao.md`).
 - A porta não é publicada por padrão. Se for, só em `127.0.0.1`.
 
 ## Cadeia de dependências
 
 - Versões exatas no `pyproject.toml` e `uv.lock` versionado, com hashes (ADR 0005).
-- Backend de build com versão travada (`uv_build==0.13.7`).
+- Backend de build com versão travada (`uv_build==0.13.7`), na mesma versão do `uv` da imagem (ADR 0005).
+- O build usa `uv sync --locked`: um `pyproject.toml` que diverge do `uv.lock` falha o gate, em vez de instalar versões diferentes das declaradas.
+- `httpx2` e `httpcore2` (o cliente HTTP do upstream, que o SDK `openai` também usa) foram conferidos: os metadados do PyPI e o repositório `pydantic/httpx2` batem (autor do `httpx`, BSD-3-Clause), o projeto tem cerca de 6 meses (criado em 2026-05-11, 22 releases) e não publica attestation de Trusted Publishing (a rota de proveniência do PyPI responde 404).
 - As actions do `ci.yml` estão fixadas por SHA, e o workflow tem permissões somente leitura.
 - O ruff roda com o conjunto `S` (regras de segurança do bandit).
-- Este repositório não executa varredura de vulnerabilidade da imagem nem do lock.
+- Este repositório ainda não executa varredura de vulnerabilidade da imagem nem do lock no CI. Medido à mão com o Trivy `v0.76.1`: imagem, Dockerfile e `uv.lock` limpos para `CRITICAL,HIGH` com `--ignore-unfixed`.

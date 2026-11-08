@@ -20,4 +20,4 @@ Medido em `src/` e `tests/` em `c923f58`: 131 linhas passam de 79, 92 passam de 
 ## Evidência
 
 - `pyproject.toml:29` (`line-length`), `:32-33` (as regras).
-- `Dockerfile:37-38` (`ruff check` e `ruff format --check` no estágio `teste`).
+- `Dockerfile:38-39` (`ruff check` e `ruff format --check` no estágio `teste`).

@@ -5,7 +5,7 @@
 O projeto usa só o `uv` (`.claude/skills/python-313/SKILL.md`). O Python é o 3.13.
 
 ```bash
-uv sync --frozen
+uv sync --locked
 uv run pytest --cov=llm_gateway --cov-report=term-missing
 uv run ruff check .
 uv run ruff format --check .
@@ -61,7 +61,7 @@ EOF
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/w -w /w llm-gateway-uv uv lock
 ```
 
-Confira o diff do `uv.lock` antes de commitar: só as versões que você quis mudar.
+Confira o diff do `uv.lock` antes de commitar: só as versões que você quis mudar. O build usa `--locked`: se o `pyproject.toml` e o `uv.lock` divergirem, o gate falha com `The lockfile at uv.lock needs to be updated, but --locked was provided`.
 
 ## O OpenAPI
 

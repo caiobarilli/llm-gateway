@@ -13,7 +13,7 @@ projeto não roda.
 
 ## 1. Ambiente: só uv
 
-- Tudo passa pelo `uv`: `uv sync --frozen`, `uv run pytest`, `uv run mypy`,
+- Tudo passa pelo `uv`: `uv sync --locked`, `uv run pytest`, `uv run mypy`,
   `uv run ruff`. Não use `pip`, `pip install --user`, `venv` à mão nem `poetry`.
 - `uv.lock` é versionado e é a fonte da verdade. Dependência nova:
   `uv add pacote==X.Y.Z` (versão exata, como as atuais no `pyproject.toml`),

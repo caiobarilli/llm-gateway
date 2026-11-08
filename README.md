@@ -27,7 +27,7 @@ flowchart LR
 - Um pedido por vez, sem fila: ocupado responde 503 com `Retry-After`.
 - Saída validada por um subconjunto de JSON Schema (Draft 2020-12): sem `$ref`, `pattern` nem combinadores. Saída inválida ou cortada vira erro 502, sem o texto.
 - Uma linha de métricas por pedido, sem prompt, resposta, schema nem token.
-- Imagem endurecida: bases por digest, usuário 10002, sem `pip`, e sobe com o sistema de arquivos só leitura.
+- Imagem endurecida: bases por digest, usuário 10002, sem `pip`, `zlib1g` atualizado, e sobe com o sistema de arquivos só leitura.
 
 ## Quickstart
 
@@ -56,7 +56,7 @@ curl -H "Authorization: Bearer exemplo-nao-use-em-producao-0123456789" http://12
 ### uv
 
 ```bash
-uv sync --frozen --no-dev
+uv sync --locked --no-dev
 
 TOKEN_ARQUIVO="$(mktemp)" && printf 'exemplo-nao-use-em-producao-0123456789' > "$TOKEN_ARQUIVO"
 

@@ -42,4 +42,4 @@ Não há variável para estes. Mudar um deles é mudar o código.
 
 ## O servidor
 
-A imagem sobe `uvicorn --factory llm_gateway.app:criar_app --host 0.0.0.0 --port 8000 --no-access-log --no-server-header` (`Dockerfile:60`). A porta 8000 é a do container. Publicá-la, e onde, é decisão de quem roda a imagem (`docs/operacao.md`).
+A imagem sobe `uvicorn --factory llm_gateway.app:criar_app --host 0.0.0.0 --port 8000 --no-access-log --no-server-header` (`Dockerfile:70`). A porta 8000 é a do container. Publicá-la, e onde, é decisão de quem roda a imagem (`docs/operacao.md`).

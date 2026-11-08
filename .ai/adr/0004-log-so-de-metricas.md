@@ -29,4 +29,4 @@ O prompt e a resposta têm texto do usuário e do modelo. O token autoriza o uso
 - `tests/test_chat.py:375` (uma linha por pedido), `:403` (JSON numa linha só) e `:426` (prompt, resposta, schema e token nunca vão para o log).
 - `tests/test_erro_interno.py:48` (o 500 inesperado em três pontos, com valores marcados, sem nada em `out` nem em `err`, a vaga devolvida e `erro` com o nome da classe).
 - `tests/test_autenticacao.py:131` (o token não aparece no log nem na resposta).
-- `Dockerfile:60` (as flags do uvicorn).
+- `Dockerfile:70` (as flags do uvicorn).
