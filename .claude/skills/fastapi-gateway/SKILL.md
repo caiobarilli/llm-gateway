@@ -32,6 +32,8 @@ regra abaixo existe para que ele continue pequeno e fechado.
 - `/docs`, `/redoc` e `/openapi.json` ficam desligados em runtime
   (`docs_url=None, redoc_url=None, openapi_url=None`). O OpenAPI é publicado
   como arquivo em `docs/`, gerado a partir da factory.
+- `redirect_slashes=False`: barra final é 404, nunca um `Location` montado pelo
+  cabeçalho `Host`.
 
 ## 3. Entrada: tudo tem limite
 
@@ -41,8 +43,8 @@ regra abaixo existe para que ele continue pequeno e fechado.
   limite em todo texto e lista (`max_length`, `le`). Campo novo sem limite é
   recusado na revisão.
 - O modelo pedido passa por `exigir_modelo_permitido` antes de qualquer coisa
-  chegar ao Ollama. Fora da allowlist: 404 `model_not_found`, com o nome
-  cortado em 100 caracteres na mensagem.
+  chegar ao Ollama. O nome tem até 100 caracteres (`LIMITE_DO_NOME`, 400
+  acima disso). Fora da allowlist: 404 `model_not_found`.
 - `stream: true` não é suportado: recusa clara, não meia implementação.
 
 ## 4. Erros no formato da OpenAI

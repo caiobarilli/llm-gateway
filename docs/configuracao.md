@@ -34,7 +34,7 @@ Não há variável para estes. Mudar um deles é mudar o código.
 | Caracteres por mensagem e somados: 8000 | `LIMITE_DE_CARACTERES` | `src/llm_gateway/chat.py:25` |
 | `max_tokens` máximo: 1024 | `LIMITE_DE_TOKENS` | `src/llm_gateway/chat.py:26` |
 | `max_tokens` padrão: 512 | `TOKENS_PADRAO` | `src/llm_gateway/chat.py:27` |
-| Nome do modelo: 100 caracteres | `LIMITE_DO_NOME` | `src/llm_gateway/modelos.py:4` |
+| Nome do modelo: 100 caracteres (mais que isso dá 400 `invalid_request`) | `LIMITE_DO_NOME` | `src/llm_gateway/modelos.py:4` |
 | Conexão com o Ollama: 5 s | `TEMPO_DE_CONEXAO` | `src/llm_gateway/ollama.py:8` |
 | Leitura do Ollama: 60 s | `TEMPO_DE_LEITURA` | `src/llm_gateway/ollama.py:9` |
 | Contexto do modelo (`num_ctx`): 4096 | `CONTEXTO` | `src/llm_gateway/ollama.py:10` |

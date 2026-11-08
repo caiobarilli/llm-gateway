@@ -1,6 +1,6 @@
 # API
 
-Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Authorization: Bearer <token>`. Qualquer outro caminho responde 404 `not_found`, inclusive `/docs`, `/redoc` e `/openapi.json`.
+Três rotas. Só o `/health` é pública. As outras ficam em `/v1` e exigem `Authorization: Bearer <token>`. Qualquer outro caminho responde 404 `not_found`, inclusive `/docs`, `/redoc` e `/openapi.json`. A barra final também: `/health/` e `/v1/models/` dão 404, sem redirecionamento e sem cabeçalho `Location`.
 
 O contrato em OpenAPI está em [`docs/openapi.json`](openapi.json). Ele é gerado por `tools/exportar_openapi.py` a partir da factory. Como o chat lê o corpo cru, o script acrescenta o schema do `Pedido` e o esquema Bearer ao que o FastAPI declara.
 
@@ -26,10 +26,10 @@ curl -H "Authorization: Bearer exemplo-nao-use-em-producao" http://127.0.0.1:800
 ```
 
 ```json
-{"object":"list","data":[{"id":"llama3.2:3b","object":"model","created":0,"owned_by":"phparrot"}]}
+{"object":"list","data":[{"id":"llama3.2:3b","object":"model","created":0,"owned_by":"llm-gateway"}]}
 ```
 
-O `created` é sempre 0 e o `owned_by` é fixo.
+O `created` é sempre 0 e o `owned_by` é sempre `llm-gateway`.
 
 ## `POST /v1/chat/completions`
 
@@ -41,7 +41,7 @@ O `created` é sempre 0 e o `owned_by` é fixo.
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `model` | string | Obrigatório, até 100 caracteres, e precisa estar na allowlist. |
+| `model` | string | Obrigatório, até 100 caracteres (mais que isso dá 400 `invalid_request`), e precisa estar na allowlist. |
 | `messages` | lista | De 1 a 8 mensagens. |
 | `messages[].role` | string | `system`, `user` ou `assistant`. |
 | `messages[].content` | string | Até 8000 caracteres. A soma de todas as mensagens também fica em 8000. |
@@ -132,7 +132,7 @@ As mensagens são em português. O `code` é estável e é por ele que o consumi
 | `mensagens_grandes_demais` | 400 | A soma dos caracteres das mensagens passa de 8000. |
 | `schema_invalido` | 400 | O `schema` do `response_format` não é um JSON Schema válido. |
 | `corpo_grande_demais` | 413 | O corpo passa de 64 KiB. |
-| `model_not_found` | 404 | O modelo não está na allowlist. A mensagem cita o nome, cortado em 100 caracteres. |
+| `model_not_found` | 404 | O modelo não está na allowlist. A mensagem cita o nome, que tem até 100 caracteres. |
 | `not_found` | 404 | Rota inexistente. |
 | `method_not_allowed` | 405 | Método não aceito pela rota. |
 | `ocupado` | 503 | Sem vaga no `Limitador`. A resposta leva `Retry-After: 10`. |

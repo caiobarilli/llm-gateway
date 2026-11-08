@@ -34,7 +34,14 @@ def criar_app(config: Config | None = None, transporte: httpx2.AsyncBaseTranspor
         yield
         await cliente.aclose()
 
-    app = FastAPI(title="phparrot-gateway", docs_url=None, redoc_url=None, openapi_url=None, lifespan=ciclo)
+    app = FastAPI(
+        title="llm-gateway",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        redirect_slashes=False,
+        lifespan=ciclo,
+    )
     app.state.config = config
     app.state.limitador = Limitador(config.concorrencia)
     app.state.cliente_ollama = cliente

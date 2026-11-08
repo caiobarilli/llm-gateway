@@ -3,7 +3,7 @@ import logging
 import sys
 from typing import Any
 
-RAIZ = "gateway"
+RAIZ = "llm_gateway"
 ATRIBUTO_DAS_METRICAS = "metricas"
 
 

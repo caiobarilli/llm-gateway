@@ -29,7 +29,7 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 | **API5** Autorização de função quebrada | Não existe função administrativa. Baixar, apagar e listar modelos do Ollama não passam pelo gateway. |
 | **API6** Acesso irrestrito a fluxos sensíveis | O fluxo caro é a geração. Ela passa por token, allowlist e `Limitador`. |
 | **API7** SSRF | O destino do upstream vem de `GATEWAY_OLLAMA_URL`. Nenhum campo do pedido escolhe URL, e redirecionamentos não são seguidos. |
-| **API8** Configuração incorreta de segurança | `/docs`, `/redoc` e `/openapi.json` desligados, sem cabeçalho `Server`, sem access log, configuração inválida impede a subida, usuário sem privilégio na imagem. |
+| **API8** Configuração incorreta de segurança | `/docs`, `/redoc` e `/openapi.json` desligados, barra final sem redirecionamento (`redirect_slashes=False`), sem cabeçalho `Server`, sem access log, configuração inválida impede a subida, usuário sem privilégio na imagem. |
 | **API9** Gestão incorreta do inventário | Toda rota está em `docs/api.md` e em `docs/openapi.json`. Rota nova fora de `/v1` exige ADR (`.ai/regras.md`). |
 | **API10** Consumo inseguro de APIs | O Ollama é um upstream como outro qualquer: a resposta é validada e o texto dele nunca é repassado (seção abaixo). |
 
@@ -42,7 +42,7 @@ Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do 
 
 ## Allowlist
 
-`GATEWAY_MODELOS` é a autorização. O modelo do pedido é conferido antes de qualquer chamada ao Ollama (`src/llm_gateway/modelos.py:7-16`). A mensagem do 404 cita o nome recebido, cortado em 100 caracteres.
+`GATEWAY_MODELOS` é a autorização. O modelo do pedido é conferido antes de qualquer chamada ao Ollama (`src/llm_gateway/modelos.py:7-16`). O nome do modelo tem até 100 caracteres: mais que isso dá 400 `invalid_request` antes da allowlist. A mensagem do 404 cita o nome recebido.
 
 ## Limites
 

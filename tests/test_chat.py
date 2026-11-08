@@ -160,6 +160,26 @@ def test_pedido_fora_do_subconjunto_responde_400_sem_chamar_o_ollama(
     assert ollama.pedidos == []
 
 
+def test_nome_do_modelo_com_mais_de_100_caracteres_responde_400(cliente: TestClient, ollama: OllamaFalso) -> None:
+    resposta = chat(cliente, pedido(model="m" * 101))
+
+    assert resposta.status_code == 400
+    assert erro(resposta)["code"] == "invalid_request"
+    assert "m" * 101 not in resposta.text
+    assert ollama.pedidos == []
+
+
+def test_nome_do_modelo_com_100_caracteres_passa_pelo_formato_e_cai_na_allowlist(
+    cliente: TestClient, ollama: OllamaFalso
+) -> None:
+    resposta = chat(cliente, pedido(model="m" * 100))
+
+    assert resposta.status_code == 404
+    assert erro(resposta)["code"] == "model_not_found"
+    assert len(erro(resposta)["message"]) < 200
+    assert ollama.pedidos == []
+
+
 def test_soma_das_mensagens_acima_do_limite_responde_400(cliente: TestClient) -> None:
     metade = "x" * (LIMITE_DE_CARACTERES // 2 + 1)
     mensagens = [{"role": "user", "content": metade}, {"role": "assistant", "content": metade}]
@@ -299,7 +319,7 @@ def test_corpo_do_ollama_que_nao_e_json_responde_502(cliente: TestClient, ollama
 
 
 def linhas_de_metricas(caplog: pytest.LogCaptureFixture) -> list[dict[str, Any]]:
-    return [registro.__dict__["metricas"] for registro in caplog.records if registro.name == "gateway.chat"]
+    return [registro.__dict__["metricas"] for registro in caplog.records if registro.name == "llm_gateway.chat"]
 
 
 def test_cada_pedido_ao_chat_gera_uma_linha_de_metricas(

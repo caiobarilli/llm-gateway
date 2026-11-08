@@ -6,7 +6,7 @@ from fastapi import Request
 
 from llm_gateway.erros import ErroOpenAI
 
-registro = logging.getLogger("gateway.autenticacao")
+registro = logging.getLogger(__name__)
 
 DESAFIO = {"WWW-Authenticate": "Bearer"}
 

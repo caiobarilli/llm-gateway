@@ -14,11 +14,11 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from llm_gateway.concorrencia import Limitador
 from llm_gateway.config import Config
 from llm_gateway.erros import ErroOpenAI
-from llm_gateway.modelos import exigir_modelo_permitido
+from llm_gateway.modelos import LIMITE_DO_NOME, exigir_modelo_permitido
 from llm_gateway.ollama import CONTEXTO, RespostaOllama, conversar
 from llm_gateway.registro import registrar_metricas
 
-registro = logging.getLogger("gateway.chat")
+registro = logging.getLogger(__name__)
 
 LIMITE_DO_CORPO = 64 * 1024
 LIMITE_DE_MENSAGENS = 8
@@ -57,7 +57,7 @@ class FormatoDeResposta(BaseModel):
 class Pedido(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    model: str = Field(max_length=100)
+    model: str = Field(max_length=LIMITE_DO_NOME)
     messages: list[Mensagem] = Field(min_length=1, max_length=LIMITE_DE_MENSAGENS)
     response_format: FormatoDeResposta | None = None
     temperature: float | None = Field(default=None, ge=0, le=2)

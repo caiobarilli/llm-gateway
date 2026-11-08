@@ -17,10 +17,11 @@ O pacote se chamava `gateway` e vivia em `docker/gateway/` do PHParrot. O nome e
 - A imagem final não leva `src/`. Medido: `llm_gateway.__file__` aponta para `/app/.venv/lib/python3.13/site-packages/llm_gateway/__init__.py`, e `/app/src` não existe.
 - Erro de empacotamento aparece no build da imagem, não em produção.
 - Renomear o pacote exige mexer no `Dockerfile`, no `pyproject.toml` e nos imports.
-- Os nomes de logger (`gateway.chat`, `gateway.autenticacao`, `RAIZ = "gateway"`) são texto fixo e não seguem o nome do pacote.
+- Os loggers vêm de `logging.getLogger(__name__)` e o handler fica em `RAIZ = "llm_gateway"`. Um logger fora de `llm_gateway.*` perde a linha em silêncio, e o teste prova o caso.
 
 ## Evidência
 
 - `pyproject.toml:1-3`, `Dockerfile:19`, `:23-25`, `:49` (`COPY --from=construcao`) e `:60`.
-- `src/llm_gateway/app.py:7` (import absoluto), `src/llm_gateway/registro.py:6` e `src/llm_gateway/chat.py:21` (os nomes de logger).
+- `src/llm_gateway/app.py:7` (import absoluto), `src/llm_gateway/registro.py:6` (`RAIZ`), `src/llm_gateway/chat.py:21` e `src/llm_gateway/autenticacao.py:9` (`getLogger(__name__)`).
+- `tests/test_registro.py:10` (um logger `llm_gateway.*` chega ao stdout) e `:18` (um logger de fora não chega).
 - PHParrot, em `864751c`: `docker/gateway/Dockerfile:25`, `:40` e `:51`.
