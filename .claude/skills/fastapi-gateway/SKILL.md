@@ -85,7 +85,10 @@ regra abaixo existe para que ele continue pequeno e fechado.
 ## 7. Métricas sem texto
 
 - Cada pedido ao chat gera uma linha JSON pelo `registrar_metricas`, sucesso ou
-  erro: modelo, status, código, tokens, tokens por segundo, carga e duração.
+  erro: modelo, status, código, erro (só o nome da classe da exceção), tokens,
+  tokens por segundo, carga e duração.
+- Exceção inesperada dentro de `completar` vira `ErroOpenAI` 500
+  `erro_interno`: nunca deixe o traceback chegar ao uvicorn.
 - Nunca entram: prompt, resposta, schema, token, cabeçalho de autorização.
   Há teste que prova isso; campo novo na linha precisa de teste também.
 - `--no-access-log` e `--no-server-header` no uvicorn continuam.

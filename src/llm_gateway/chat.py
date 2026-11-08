@@ -14,7 +14,7 @@ from pydantic_core import ErrorDetails
 
 from llm_gateway.concorrencia import Limitador
 from llm_gateway.config import Config
-from llm_gateway.erros import ErroOpenAI
+from llm_gateway.erros import ErroOpenAI, erro_interno
 from llm_gateway.modelos import LIMITE_DO_NOME, exigir_modelo_permitido
 from llm_gateway.ollama import CONTEXTO, RespostaOllama, conversar
 from llm_gateway.registro import registrar_metricas
@@ -195,6 +195,7 @@ async def completar(request: Request) -> JSONResponse:
         "modelo": None,
         "status": 500,
         "codigo": None,
+        "erro": None,
         "prompt_tokens": None,
         "completion_tokens": None,
         "tokens_por_segundo": None,
@@ -224,6 +225,10 @@ async def completar(request: Request) -> JSONResponse:
         metricas["status"] = erro.status
         metricas["codigo"] = erro.codigo
         raise
+    except Exception as falha:
+        metricas["codigo"] = "erro_interno"
+        metricas["erro"] = type(falha).__name__
+        raise erro_interno() from None
     finally:
         metricas["duracao_ms"] = round((time.perf_counter() - inicio) * 1000)
         registrar_metricas(registro, "chat", metricas)

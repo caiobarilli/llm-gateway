@@ -20,7 +20,7 @@ Não há access log (`--no-access-log`).
 Uma linha por pedido que chega à rota do chat, com sucesso ou erro. Um pedido recusado antes disso (token ausente, errado ou indisponível) não gera linha de chat, só o evento de autenticação.
 
 ```json
-{"nivel": "info", "evento": "chat", "modelo": "llama3.2:3b", "status": 200, "codigo": null, "prompt_tokens": 63, "completion_tokens": 27, "tokens_por_segundo": 50.0, "carga_ms": 4, "duracao_ms": 1}
+{"nivel": "info", "evento": "chat", "modelo": "llama3.2:3b", "status": 200, "codigo": null, "erro": null, "prompt_tokens": 63, "completion_tokens": 27, "tokens_por_segundo": 50.0, "carga_ms": 4, "duracao_ms": 1}
 ```
 
 | Campo | Tipo | Significado |
@@ -28,8 +28,9 @@ Uma linha por pedido que chega à rota do chat, com sucesso ou erro. Um pedido r
 | `nivel` | string | Nível do log. A linha do chat sai sempre em `info`. |
 | `evento` | string | `chat`. |
 | `modelo` | string ou `null` | O modelo do pedido, só depois de passar pela allowlist. É `null` quando o pedido foi recusado antes (corpo inválido, modelo fora da lista). |
-| `status` | inteiro | O status HTTP da resposta. Exceção não prevista fica em 500. |
+| `status` | inteiro | O status HTTP da resposta. Exceção não prevista é 500. |
 | `codigo` | string ou `null` | O `code` do erro (`docs/api.md`). `null` no sucesso. |
+| `erro` | string ou `null` | Só o nome da classe da exceção (por exemplo `RuntimeError`), nunca a mensagem. Preenchido só no 500 `erro_interno` de uma exceção que o gateway não previa. `null` nos outros casos. |
 | `prompt_tokens` | inteiro ou `null` | `prompt_eval_count` do Ollama. `null` se o Ollama não chegou a responder. |
 | `completion_tokens` | inteiro ou `null` | `eval_count` do Ollama. |
 | `tokens_por_segundo` | número ou `null` | `eval_count` dividido por `eval_duration`, com uma casa decimal. `null` se não há duração. |
@@ -39,8 +40,16 @@ Uma linha por pedido que chega à rota do chat, com sucesso ou erro. Um pedido r
 Um erro depois da resposta do Ollama (`saida_invalida`, `saida_truncada`) já traz os tokens, a taxa e a carga:
 
 ```json
-{"nivel": "info", "evento": "chat", "modelo": "llama3.2:3b", "status": 502, "codigo": "saida_invalida", "prompt_tokens": 63, "completion_tokens": 27, "tokens_por_segundo": 50.0, "carga_ms": 4, "duracao_ms": 1}
+{"nivel": "info", "evento": "chat", "modelo": "llama3.2:3b", "status": 502, "codigo": "saida_invalida", "erro": null, "prompt_tokens": 63, "completion_tokens": 27, "tokens_por_segundo": 50.0, "carga_ms": 4, "duracao_ms": 1}
 ```
+
+Um 500 inesperado dentro da rota do chat devolve `erro_interno` com mensagem fixa e sai assim:
+
+```json
+{"nivel": "info", "evento": "chat", "modelo": "llama3.2:3b", "status": 500, "codigo": "erro_interno", "erro": "RuntimeError", "prompt_tokens": null, "completion_tokens": null, "tokens_por_segundo": null, "carga_ms": null, "duracao_ms": 3}
+```
+
+O traceback não é impresso: a mensagem da exceção pode levar o schema ou o prompt do cliente, então o nome da classe é o único diagnóstico. Limite conhecido: uma exceção fora da rota do chat (por exemplo, na leitura do token) continua com o traceback padrão do uvicorn no stderr.
 
 ### Eventos de autenticação
 

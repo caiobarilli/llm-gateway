@@ -21,6 +21,10 @@ class ErroOpenAI(Exception):
         self.cabecalhos = cabecalhos or {}
 
 
+def erro_interno() -> ErroOpenAI:
+    return ErroOpenAI(500, "Erro interno do gateway.", "server_error", "erro_interno")
+
+
 def resposta_de_erro(erro: ErroOpenAI) -> JSONResponse:
     corpo = {"error": {"message": erro.mensagem, "type": erro.tipo, "param": None, "code": erro.codigo}}
 
@@ -52,7 +56,7 @@ async def tratar_erro_de_validacao(_: Request, erro: Exception) -> JSONResponse:
 
 
 async def tratar_erro_inesperado(_: Request, erro: Exception) -> JSONResponse:
-    return resposta_de_erro(ErroOpenAI(500, "Erro interno do gateway.", "server_error", "erro_interno"))
+    return resposta_de_erro(erro_interno())
 
 
 def registrar_tratadores(app: FastAPI) -> None:
