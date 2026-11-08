@@ -96,7 +96,11 @@ O gate é `docker build --target teste .`. Ele roda:
 - `pytest`, com o Ollama simulado, sem acesso à rede, aviso como erro e piso de cobertura (linhas e ramos);
 - a trava de comentários: só `# type:` e `# noqa` passam.
 
-Dependências com versão exata e `uv.lock`. Imagens base fixadas por digest. O CI roda a trava e o gate em push e em pull request para o `main`.
+Dependências com versão exata e `uv.lock`. Imagens base fixadas por digest. O CI roda a trava e o gate em push e em pull request para o `main`. O `seguranca.yml` roda o Trivy na imagem final, no Dockerfile e no `uv.lock`, e o Dependabot cuida de `uv`, `docker` e `github-actions`.
+
+## Release
+
+Uma tag `vX.Y.Z` constrói a imagem, varre o digest com o Trivy e publica exatamente esse digest em `ghcr.io/caiobarilli/llm-gateway:X.Y.Z`, com o SBOM anexado e o digest no texto da release (ADR 0011). O consumidor fixa a imagem por digest. A tag nunca é movida, e não existe `latest`. Contrato e versão: [docs/api.md](docs/api.md).
 
 ## Consumidor de referência
 

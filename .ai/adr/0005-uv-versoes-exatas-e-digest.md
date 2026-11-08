@@ -20,7 +20,7 @@ O mesmo build precisa dar a mesma imagem. O Dependabot do PHParrot subiu o Pytho
 - Atualizar uma dependência é um PR que muda o `pyproject.toml` e o `uv.lock` juntos.
 - Sem `uv` local, o lock se gera numa imagem descartável (`docs/desenvolvimento.md`).
 - O build deixa de ser hermético: o `apt-get update` do `zlib1g` precisa de rede e do índice do Debian do dia. Foi o mesmo custo que o PHParrot aceitou em `d44c917`.
-- Este repositório não tem `.github/dependabot.yml`. Se ele for criado, o bloco de `docker` precisa ignorar `semver-minor` e `semver-major` do `python`, como no PHParrot.
+- O `.github/dependabot.yml` ignora `semver-minor` e `semver-major` do `python` no bloco de `docker`, como no PHParrot (ADR 0011). O Dependabot pode subir o `uv` da imagem sem o `uv_build`: quem revisa o PR sobe os dois juntos.
 
 ## Evidência
 

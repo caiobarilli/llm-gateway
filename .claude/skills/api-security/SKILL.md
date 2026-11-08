@@ -82,9 +82,15 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 - Imagens base por digest, usuário sem privilégio (10002), sem `pip` na imagem
   final, healthcheck.
 - Dependências com versão exata e `uv.lock`. Actions fixadas por SHA.
-- Dependabot para `uv`, `docker` e `github-actions`. (alvo)
-- CI: ruff com o conjunto `S` (bandit). Trivy da imagem e da config, SBOM,
-  `pip-audit` e CodeQL. (alvo) Achado alto ou crítico bloqueia o merge. (alvo)
+- Dependabot para `uv`, `docker` e `github-actions`, com o ignore de minor e
+  major do `python` (`.github/dependabot.yml`).
+- CI: ruff com o conjunto `S` (bandit). `seguranca.yml`: Trivy da imagem final,
+  do Dockerfile e do `uv.lock`, com `CRITICAL,HIGH`, `ignore-unfixed` e
+  `exit-code 1`. Sem `pip-audit`: o Trivy lê o `uv.lock`.
+- Release por tag (`release.yml`): varre o digest, publica exatamente esse
+  digest e anexa o SBOM (ADR 0011). Nunca mover uma tag, sem `latest`.
+- CodeQL pelo default setup e o ruleset da `main` ficam na interface do GitHub,
+  ligados pelo Maintainer. (alvo)
 
 ## Roteiro de revisão de um PR
 
@@ -97,6 +103,6 @@ pode virar um proxy aberto. Cada seção abaixo cita o risco do OWASP API Top 10
 5. Dependência nova: versão exata, lock, licença compatível com MIT, e por que
    ela é necessária?
 6. Dockerfile: digest mantido, usuário 10002 mantido, nada de pacote extra na
-   imagem final?
+   imagem final? O Trivy de imagem continua saindo com 0?
 
 Achado sem correção no PR vira item em `.ai/pitfalls.md` com evidência.

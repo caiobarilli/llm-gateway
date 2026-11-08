@@ -81,6 +81,14 @@ docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/docs":/app/docs llm-gateway:
 
 Rodar de novo não muda o arquivo. Mudou rota, modelo de entrada, limite ou `code`? Gere de novo e commite o arquivo junto: `tests/test_openapi.py` compara o arquivo com o que a factory gera, e o estágio `teste` copia só o `docs/openapi.json` para isso. Código de erro novo entra no enum `Codigo` (`src/llm_gateway/erros.py`), e o mypy recusa um código que não seja membro dele.
 
+## CI e release
+
+- `ci.yml`: a trava de comentários e o gate (`docker build --target teste .`), em push e em pull request para o `main`.
+- `seguranca.yml`: o Trivy da imagem final, do Dockerfile e do `uv.lock` (`CRITICAL,HIGH`, `ignore-unfixed`, `exit-code 1`), quando o PR mexe em `Dockerfile`, `pyproject.toml`, `uv.lock`, `docs/openapi.json` ou no workflow, e toda segunda-feira. Para rodar à mão sem instalar nada: `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 <imagem>`.
+- `release.yml`: uma tag `vX.Y.Z` constrói a imagem final, varre o digest, publica exatamente esse digest em `ghcr.io/caiobarilli/llm-gateway:X.Y.Z` e cria a release com o SBOM e o digest no texto. Antes de tagar `vX.Y.Z`, o `pyproject.toml` já está em `X.Y.Z` (a `info.version` do OpenAPI vem dele). Uma tag `vX.Y.Z-rcN` é ensaio: não confere a versão e vira pré-lançamento.
+- Nunca mover nem sobrescrever uma tag, e não existe `latest`. O job recusa publicar uma tag de imagem que já existe. Voltar atrás é apontar o consumidor para o digest da versão anterior.
+- Os scripts do release estão em `.github/scripts/` e rodam fora do GitHub: o ensaio local usa dois `registry:2`, um no lugar do registro de varredura e outro no lugar do GHCR.
+
 ## Fluxo de branch e commit
 
 Está em `.ai/regras.md`. Em resumo:

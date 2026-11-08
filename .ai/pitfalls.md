@@ -14,7 +14,7 @@ Evidência no PHParrot:
 
 Código atual: `pyproject.toml:8` (`requires-python = "==3.13.*"`) e `Dockerfile:3` (imagem 3.13.18 por digest).
 
-Este repositório não tem `.github/dependabot.yml`. Se ele for criado, o bloco de `docker` precisa do mesmo ignore do `python`. O que exatamente quebrou na 3.15 não foi testado aqui.
+Neste repositório, o `.github/dependabot.yml` tem o mesmo ignore do `python` no bloco de `docker` (`:14-18`). O que exatamente quebrou na 3.15 não foi testado aqui.
 
 ## O layout solto na raiz quebra imports e Dockerfile
 
@@ -79,3 +79,14 @@ Repetido nesta rodada com `docker build --target teste .`: o build sai com códi
 ## O `pytest-cov` compara o total arredondado, mas imprime `FAIL` sem arredondar
 
 Com a cobertura em 98,988% e `fail_under = 99` (precisão 0), o `pytest` sai com 0 e ainda assim imprime `FAIL Required test coverage of 99.0% not reached. Total coverage: 98.99%`. O código de saída usa o total arredondado (`coverage.results.should_fail_under`), e a mensagem do resumo compara o valor exato. Por isso o piso é um inteiro abaixo do medido (`fail_under = 98`), que não gera a mensagem enganosa. Provado: com `98`, a rodada completa sai com 0 e a rodada de um arquivo só (`tests/test_saude.py`) sai com 1.
+
+## O `imagetools create` troca o digest da imagem que copia
+
+Medido no ensaio local do release, com dois `registry:2` (portas 5000 e 5001), copiando um manifesto de imagem simples:
+
+```
+docker buildx imagetools create --tag localhost:5001/llm-gateway:0.0.1-rc localhost:5000/llm-gateway@sha256:c0ab30df…
+pushing sha256:5a32ed51… to localhost:5001/llm-gateway:0.0.1-rc
+```
+
+O destino ficou com um índice OCI (`application/vnd.oci.image.index.v1+json`) que aponta para o `c0ab30df…`, e o digest da tag virou `5a32ed51…`. Com um único origem, o padrão é gerar o índice (`--prefer-index`). Com `--prefer-index=false` a cópia é fiel e o digest é o mesmo. Código atual: `.github/scripts/publicar.sh:9` usa a flag e `:11-15` confere que o digest publicado é o varrido.

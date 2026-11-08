@@ -15,7 +15,7 @@
 | Quem tem o token | Mandar um schema que faz o gateway buscar uma URL ou gastar CPU | Subconjunto de palavras-chave e tetos de tamanho (ADR 0009). |
 | O modelo | Devolver saída fora do formato ou cortada | Validação por JSON Schema e erro 502, sem repassar o texto. |
 | O Ollama ou a rede até ele | Responder lixo, demorar ou cair | Pydantic na resposta, tempos limite e erro próprio, sem repassar o corpo. |
-| A cadeia de dependências | Trazer código alterado | Versões exatas, `uv.lock` com hashes, imagens e actions fixadas. |
+| A cadeia de dependências | Trazer código alterado ou vulnerável | Versões exatas, `uv.lock` com hashes, imagens e actions fixadas, Dependabot e Trivy no CI e na release. |
 
 Fora deste modelo: o canal até o gateway. Ele fala HTTP. Expor a porta fora do loopback ou da rede interna, e proteger esse caminho (por exemplo, com um túnel), cabe a quem roda a imagem. Quem pode ler o arquivo do token também fica fora: é o consumidor que o monta.
 
@@ -84,4 +84,7 @@ Só a linha de métricas e eventos curtos de autenticação, sem conteúdo (ADR 
 - `httpx2` e `httpcore2` (o cliente HTTP do upstream, que o SDK `openai` também usa) foram conferidos: os metadados do PyPI e o repositório `pydantic/httpx2` batem (autor do `httpx`, BSD-3-Clause), o projeto tem cerca de 6 meses (criado em 2026-05-11, 22 releases) e não publica attestation de Trusted Publishing (a rota de proveniência do PyPI responde 404).
 - As actions do `ci.yml` estão fixadas por SHA, e o workflow tem permissões somente leitura.
 - O ruff roda com o conjunto `S` (regras de segurança do bandit).
-- Este repositório ainda não executa varredura de vulnerabilidade da imagem nem do lock no CI. Medido à mão com o Trivy `v0.76.1`: imagem, Dockerfile e `uv.lock` limpos para `CRITICAL,HIGH` com `--ignore-unfixed`.
+- O `seguranca.yml` roda o Trivy `v0.76.1` sobre a imagem final, o Dockerfile e o `uv.lock` (`CRITICAL,HIGH`, `--ignore-unfixed`, `exit-code 1`), em PR e push que mexem nos arquivos de build e toda segunda-feira. Medido à mão com a mesma versão: os três saem com 0.
+- O Dependabot cobre `uv`, `docker` e `github-actions`. O Python da imagem só sobe em patch.
+- A release é por tag e publica o digest que o Trivy varreu, com o SBOM anexado (ADR 0011). A imagem é pública no GHCR e não leva segredo.
+- Ficam na interface do GitHub, ligados pelo Maintainer: o CodeQL (default setup, sem bloquear) e o ruleset da `main`.

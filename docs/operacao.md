@@ -90,6 +90,10 @@ Como vigiar: o `tokens_por_segundo` já sai na linha de métricas. Um alerta aba
 
 A carga a frio do modelo (cerca de 11 s) volta depois de cerca de 5 minutos parado. Para medir o efeito de uma mudança no host: envie um pedido, espere 6 minutos, envie outro e leia o `carga_ms` da linha de métricas. Com o modelo frio, cerca de 11000 ms. Com o modelo mantido na memória, o esperado é abaixo de 200 ms (não testado aqui: não há Ollama neste ambiente).
 
+## A imagem publicada
+
+Cada release publica `ghcr.io/caiobarilli/llm-gateway:X.Y.Z`, e o texto da release traz o digest. Fixe a imagem por digest (`ghcr.io/caiobarilli/llm-gateway:X.Y.Z@sha256:…`): a tag nunca é movida e o digest é imutável. O primeiro `docker pull` precisa de rede.
+
 ## O que o container espera de quem o roda
 
 - **Token:** um arquivo legível pelo uid 10002, montado só leitura, com pelo menos 32 caracteres (`openssl rand -hex 32` gera 64), e `GATEWAY_TOKEN_ARQUIVO` apontando para o caminho dentro do container. Para trocar o token, reescreva o arquivo no lugar. Trocar o inode de um arquivo montado sozinho (`mv`, editor) pode deixar o container com o valor antigo (ADR 0013 do PHParrot; não testado aqui).
