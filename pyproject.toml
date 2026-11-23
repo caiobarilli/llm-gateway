@@ -7,7 +7,7 @@ name = "llm-gateway"
 version = "0.1.0"
 requires-python = "==3.13.*"
 dependencies = [
-    "fastapi==0.162.5",
+    "fastapi==0.165.0",
     "httpx2==2.16.0",
     "jsonschema==4.26.0",
     "pydantic==2.14.3",
